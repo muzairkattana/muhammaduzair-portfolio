@@ -49,7 +49,7 @@ export default function ProfessionalHeader() {
   }, [toggleFullscreen])
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background/95 to-primary/5">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-background/95 to-primary/5 pt-16 sm:pt-20">
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
@@ -66,12 +66,12 @@ export default function ProfessionalHeader() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative order-1 lg:order-2 mobile-profile-top"
           >
-            <div className="relative w-full max-w-xs sm:max-w-sm lg:max-w-lg mx-auto mobile-profile-large">
+            <div className="relative w-full max-w-xs sm:max-w-sm lg:max-w-lg mx-auto mobile-profile-large mt-8 sm:mt-12 lg:mt-0">
               {/* Enhanced decorative elements */}
               <div className="absolute -top-6 -left-6 w-32 h-32 bg-primary/20 rounded-full blur-2xl animate-pulse"></div>
               <div className="absolute -bottom-6 -right-6 w-40 h-40 bg-primary/10 rounded-full blur-2xl animate-pulse delay-500"></div>
 
-              {/* Main Image Container - Larger on mobile */}
+              {/* Main Image Container - Larger on mobile, moved down */}
               <div className="relative bg-gradient-to-br from-primary/10 via-background to-primary/5 rounded-3xl p-6 lg:p-8 backdrop-blur-sm border border-primary/20">
                 <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-3 lg:p-4">
                   <Image
@@ -147,7 +147,7 @@ export default function ProfessionalHeader() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
+              className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed"
             >
               Transform your vision into reality with cutting-edge web development, AI solutions, and business strategy.
               Let's build something extraordinary together.
@@ -158,19 +158,19 @@ export default function ProfessionalHeader() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="grid grid-cols-3 gap-6 py-6"
+              className="grid grid-cols-3 gap-4 sm:gap-6 py-6"
             >
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-primary">50+</div>
-                <div className="text-sm text-muted-foreground">Projects Completed</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">50+</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Projects Completed</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-primary">5+</div>
-                <div className="text-sm text-muted-foreground">Years Experience</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">5+</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Years Experience</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-primary">100%</div>
-                <div className="text-sm text-muted-foreground">Client Satisfaction</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">100%</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Client Satisfaction</div>
               </div>
             </motion.div>
 
@@ -185,12 +185,12 @@ export default function ProfessionalHeader() {
                 size="lg"
                 className="group bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
               >
-                <Briefcase className="h-5 w-5 mr-2" />
+                <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 Hire Me Now
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button size="lg" variant="outline" className="group">
-                <TrendingUp className="h-5 w-5 mr-2" />
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 View My Work
                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
@@ -201,15 +201,15 @@ export default function ProfessionalHeader() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex items-center gap-6 pt-6 border-t border-border/50"
+              className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pt-6 border-t border-border/50"
             >
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Trusted by 100+ clients</span>
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Trusted by 100+ clients</span>
               </div>
               <div className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Certified Professional</span>
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Certified Professional</span>
               </div>
             </motion.div>
           </motion.div>

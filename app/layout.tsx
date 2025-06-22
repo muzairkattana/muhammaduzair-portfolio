@@ -42,8 +42,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <body className={`${inter.className} skyblue-theme`}>
+        <ThemeProvider attribute="class" defaultTheme="skyblue" enableSystem>
           <SoundProvider>
             <TextToSpeechProvider>
               {children}

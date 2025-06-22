@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useRef, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 
@@ -16,12 +15,11 @@ interface SkillRadarProps {
   className?: string
 }
 
-export default function SkillRadar({ skills, size = 300, className = "" }: SkillRadarProps) {
+export default function SkillRadar({ skills, size = 350, className = "" }: SkillRadarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  // Add more professional styling and animations
   const [animationProgress, setAnimationProgress] = useState(0)
   const [hoveredSkill, setHoveredSkill] = useState<number | null>(null)
+  const [pulseAnimation, setPulseAnimation] = useState(0)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -30,7 +28,15 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
     return () => clearTimeout(timer)
   }, [])
 
-  // Enhanced drawing with professional styling
+  // Pulse animation for professional effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulseAnimation((prev) => (prev + 0.02) % (Math.PI * 2))
+    }, 50)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Enhanced drawing with ultra-professional styling
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -53,43 +59,54 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
     const centerY = size / 2
     const radius = size * 0.35
 
-    // Professional gradient background
-    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
-    bgGradient.addColorStop(0, "rgba(59, 130, 246, 0.05)")
-    bgGradient.addColorStop(1, "rgba(59, 130, 246, 0.02)")
+    // Ultra-professional gradient background with pulse
+    const pulseIntensity = 0.5 + Math.sin(pulseAnimation) * 0.1
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 1.2)
+    bgGradient.addColorStop(0, `rgba(59, 130, 246, ${0.08 * pulseIntensity})`)
+    bgGradient.addColorStop(0.5, `rgba(59, 130, 246, ${0.04 * pulseIntensity})`)
+    bgGradient.addColorStop(1, "rgba(59, 130, 246, 0.01)")
 
     ctx.fillStyle = bgGradient
     ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+    ctx.arc(centerX, centerY, radius * 1.2, 0, Math.PI * 2)
     ctx.fill()
 
-    // Enhanced grid lines with glow effect
+    // Professional concentric circles with enhanced styling
     const levels = 5
     for (let i = 1; i <= levels; i++) {
       const levelRadius = (radius / levels) * i
+      const opacity = 0.1 + i * 0.05 + Math.sin(pulseAnimation + i) * 0.02
 
-      // Glow effect
-      ctx.shadowColor = "rgba(59, 130, 246, 0.3)"
-      ctx.shadowBlur = 2
-      ctx.strokeStyle = `rgba(59, 130, 246, ${0.1 + i * 0.05})`
-      ctx.lineWidth = i === levels ? 2 : 1
+      // Outer glow
+      ctx.shadowColor = `rgba(59, 130, 246, ${opacity * 2})`
+      ctx.shadowBlur = 3
+      ctx.strokeStyle = `rgba(59, 130, 246, ${opacity})`
+      ctx.lineWidth = i === levels ? 3 : 1.5
 
       ctx.beginPath()
       ctx.arc(centerX, centerY, levelRadius, 0, Math.PI * 2)
       ctx.stroke()
 
+      // Inner highlight
+      ctx.shadowBlur = 0
+      ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.3})`
+      ctx.lineWidth = 0.5
+      ctx.stroke()
+
       ctx.shadowBlur = 0
     }
 
-    // Animated skill axes with glow
+    // Enhanced skill axes with dynamic effects
     const angleStep = (Math.PI * 2) / skills.length
     skills.forEach((_, i) => {
       const angle = i * angleStep - Math.PI / 2
+      const isHovered = hoveredSkill === i
+      const glowIntensity = isHovered ? 1 : 0.4 + Math.sin(pulseAnimation + i) * 0.2
 
-      ctx.shadowColor = "rgba(59, 130, 246, 0.4)"
-      ctx.shadowBlur = 1
-      ctx.strokeStyle = hoveredSkill === i ? "rgba(59, 130, 246, 0.8)" : "rgba(59, 130, 246, 0.3)"
-      ctx.lineWidth = hoveredSkill === i ? 2 : 1
+      ctx.shadowColor = `rgba(59, 130, 246, ${glowIntensity * 0.6})`
+      ctx.shadowBlur = isHovered ? 6 : 2
+      ctx.strokeStyle = `rgba(59, 130, 246, ${glowIntensity * 0.8})`
+      ctx.lineWidth = isHovered ? 3 : 1.5
 
       ctx.beginPath()
       ctx.moveTo(centerX, centerY)
@@ -99,7 +116,7 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
       ctx.shadowBlur = 0
     })
 
-    // Animated skill points with progress
+    // Calculate animated skill points
     const points = skills.map((skill, i) => {
       const angle = i * angleStep - Math.PI / 2
       const distance = (skill.level / 100) * radius * animationProgress
@@ -112,11 +129,13 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
       }
     })
 
-    // Professional skill area with gradient
+    // Ultra-professional skill area with multiple gradients
     if (animationProgress > 0) {
+      // Main area gradient
       const areaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
-      areaGradient.addColorStop(0, "rgba(59, 130, 246, 0.3)")
-      areaGradient.addColorStop(1, "rgba(59, 130, 246, 0.1)")
+      areaGradient.addColorStop(0, "rgba(59, 130, 246, 0.25)")
+      areaGradient.addColorStop(0.7, "rgba(59, 130, 246, 0.15)")
+      areaGradient.addColorStop(1, "rgba(59, 130, 246, 0.05)")
 
       ctx.beginPath()
       points.forEach((point, i) => {
@@ -131,67 +150,106 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
       ctx.fillStyle = areaGradient
       ctx.fill()
 
-      // Enhanced border with glow
-      ctx.shadowColor = "rgba(59, 130, 246, 0.6)"
-      ctx.shadowBlur = 4
-      ctx.strokeStyle = "rgba(59, 130, 246, 0.8)"
-      ctx.lineWidth = 2
+      // Enhanced border with multiple layers
+      ctx.shadowColor = "rgba(59, 130, 246, 0.8)"
+      ctx.shadowBlur = 8
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.9)"
+      ctx.lineWidth = 3
       ctx.stroke()
+
+      // Inner highlight border
+      ctx.shadowBlur = 0
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.4)"
+      ctx.lineWidth = 1
+      ctx.stroke()
+
       ctx.shadowBlur = 0
     }
 
-    // Enhanced skill points with animation
+    // Ultra-enhanced skill points with professional styling
     points.forEach((point, i) => {
       const isHovered = hoveredSkill === i
-      const pointSize = isHovered ? 6 : 4
+      const baseSize = 5
+      const hoverSize = 8
+      const pointSize = isHovered ? hoverSize : baseSize
+      const pulseSize = pointSize + Math.sin(pulseAnimation + i) * 1
 
-      // Glow effect for points
+      // Outer glow
       ctx.shadowColor = "rgba(59, 130, 246, 0.8)"
-      ctx.shadowBlur = isHovered ? 8 : 4
+      ctx.shadowBlur = isHovered ? 12 : 6
 
+      // Main point
       ctx.beginPath()
-      ctx.arc(point.x, point.y, pointSize, 0, Math.PI * 2)
+      ctx.arc(point.x, point.y, pulseSize, 0, Math.PI * 2)
       ctx.fillStyle = isHovered ? "rgba(59, 130, 246, 1)" : "rgba(59, 130, 246, 0.9)"
       ctx.fill()
 
       // Inner highlight
+      ctx.shadowBlur = 0
       ctx.beginPath()
-      ctx.arc(point.x, point.y, pointSize - 1, 0, Math.PI * 2)
+      ctx.arc(point.x, point.y, pulseSize - 2, 0, Math.PI * 2)
       ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
+      ctx.fill()
+
+      // Core point
+      ctx.beginPath()
+      ctx.arc(point.x, point.y, pulseSize - 3, 0, Math.PI * 2)
+      ctx.fillStyle = "rgba(59, 130, 246, 1)"
       ctx.fill()
 
       ctx.shadowBlur = 0
     })
 
-    // Enhanced skill labels with better positioning
-    ctx.fillStyle = "hsl(var(--foreground))"
-    ctx.font = "bold 12px system-ui"
+    // Professional skill labels with enhanced styling
+    ctx.font = "bold 13px system-ui, -apple-system, sans-serif"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
 
     skills.forEach((skill, i) => {
       const angle = i * angleStep - Math.PI / 2
-      const labelDistance = radius + 25
+      const labelDistance = radius + 30
       const labelX = centerX + Math.cos(angle) * labelDistance
       const labelY = centerY + Math.sin(angle) * labelDistance
+      const isHovered = hoveredSkill === i
 
-      // Background for labels
+      // Enhanced background for labels
       const textWidth = ctx.measureText(skill.name).width
-      ctx.fillStyle = "rgba(59, 130, 246, 0.1)"
-      ctx.fillRect(labelX - textWidth / 2 - 4, labelY - 8, textWidth + 8, 16)
+      const bg = ctx.createLinearGradient(
+        labelX - textWidth / 2 - 8,
+        labelY - 12,
+        labelX + textWidth / 2 + 8,
+        labelY + 12,
+      )
+      bg.addColorStop(0, "rgba(59, 130, 246, 0.1)")
+      bg.addColorStop(0.5, "rgba(59, 130, 246, 0.15)")
+      bg.addColorStop(1, "rgba(59, 130, 246, 0.1)")
 
-      ctx.fillStyle = hoveredSkill === i ? "rgba(59, 130, 246, 1)" : "hsl(var(--foreground))"
-      ctx.fillText(skill.name, labelX, labelY)
+      ctx.fillStyle = bg
+      ctx.fillRect(labelX - textWidth / 2 - 8, labelY - 12, textWidth + 16, 24)
 
-      // Skill percentage
-      ctx.font = "10px system-ui"
-      ctx.fillStyle = "hsl(var(--muted-foreground))"
-      ctx.fillText(`${skill.level}%`, labelX, labelY + 12)
-      ctx.font = "bold 12px system-ui"
+      // Label border
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.3)"
+      ctx.lineWidth = 1
+      ctx.strokeRect(labelX - textWidth / 2 - 8, labelY - 12, textWidth + 16, 24)
+
+      // Label text with glow
+      ctx.shadowColor = isHovered ? "rgba(59, 130, 246, 0.8)" : "rgba(59, 130, 246, 0.4)"
+      ctx.shadowBlur = isHovered ? 4 : 2
+      ctx.fillStyle = isHovered ? "rgba(59, 130, 246, 1)" : "rgba(59, 130, 246, 0.9)"
+      ctx.fillText(skill.name, labelX, labelY - 2)
+
+      // Skill level text
+      ctx.font = "11px system-ui, -apple-system, sans-serif"
+      ctx.fillStyle = "rgba(59, 130, 246, 0.7)"
+      ctx.shadowBlur = 1
+      ctx.fillText(`${skill.level}%`, labelX, labelY + 10)
+
+      ctx.shadowBlur = 0
+      ctx.font = "bold 13px system-ui, -apple-system, sans-serif"
     })
-  }, [skills, size, animationProgress, hoveredSkill])
+  }, [skills, size, animationProgress, hoveredSkill, pulseAnimation])
 
-  // Add mouse interaction
+  // Enhanced mouse interaction
   const handleMouseMove = useCallback(
     (event: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current
@@ -205,50 +263,59 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
       const centerY = size / 2
       const radius = size * 0.35
 
-      // Check if mouse is near any skill point
-      const angleStep = (Math.PI * 2) / skills.length
-      let nearestSkill = null
+      let closestSkill = null
       let minDistance = Number.POSITIVE_INFINITY
 
       skills.forEach((skill, i) => {
-        const angle = i * angleStep - Math.PI / 2
-        const distance = (skill.level / 100) * radius
+        const angle = (i * (Math.PI * 2)) / skills.length - Math.PI / 2
+        const distance = (skill.level / 100) * radius * animationProgress
         const pointX = centerX + Math.cos(angle) * distance
         const pointY = centerY + Math.sin(angle) * distance
 
         const dist = Math.sqrt((x - pointX) ** 2 + (y - pointY) ** 2)
         if (dist < 20 && dist < minDistance) {
           minDistance = dist
-          nearestSkill = i
+          closestSkill = i
         }
       })
 
-      setHoveredSkill(nearestSkill)
+      setHoveredSkill(closestSkill)
     },
-    [skills, size],
+    [skills, size, animationProgress],
   )
 
-  // Add mouse leave handler
   const handleMouseLeave = useCallback(() => {
     setHoveredSkill(null)
   }, [])
 
   return (
     <motion.div
-      className={`relative flex items-center justify-center ${className}`}
-      initial={{ opacity: 0, scale: 0.9 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      viewport={{ once: true }}
+      className={`skill-radar-container relative ${className}`}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
     >
       <canvas
         ref={canvasRef}
-        width={size}
-        height={size}
-        className="max-w-full cursor-pointer"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        className="cursor-pointer transition-all duration-300 hover:scale-105"
+        style={{
+          filter: "drop-shadow(0 10px 30px rgba(59, 130, 246, 0.2))",
+        }}
       />
+
+      {/* Professional tooltip */}
+      {hoveredSkill !== null && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg shadow-xl border border-blue-500/30"
+        >
+          <div className="text-sm font-semibold">{skills[hoveredSkill].name}</div>
+          <div className="text-xs opacity-90">Proficiency: {skills[hoveredSkill].level}%</div>
+        </motion.div>
+      )}
     </motion.div>
   )
 }

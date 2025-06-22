@@ -4,14 +4,14 @@
 
 :root {
   /* Base colors */
-  --hue-color: 190; /* Default theme color - Teal */
+  --hue-color: 200; /* Sky blue hue as default */
   --first-color: hsl(var(--hue-color), 69%, 61%);
   --first-color-second: hsl(var(--hue-color), 69%, 61%);
   --first-color-alt: hsl(var(--hue-color), 57%, 53%);
   --first-color-lighter: hsl(var(--hue-color), 92%, 85%);
 
   /* Text colors */
-  --title-color: hsl(var(--hue-color), 8%, 15%);
+  --title-color: hsl(var(--hue-color), 15%, 15%);
   --text-color: hsl(var(--hue-color), 8%, 45%);
   --text-color-light: hsl(var(--hue-color), 8%, 65%);
 
@@ -19,8 +19,8 @@
   --input-color: hsl(var(--hue-color), 70%, 96%);
 
   /* Body colors */
-  --body-color: hsl(var(--hue-color), 60%, 99%);
-  --container-color: #fff;
+  --body-color: hsl(var(--hue-color), 60%, 97%);
+  --container-color: hsl(var(--hue-color), 40%, 95%);
 
   /* Scrollbar colors */
   --scroll-bar-color: hsl(var(--hue-color), 22%, 90%);
@@ -34,7 +34,46 @@
   /* Animation speed */
   --transition-speed: 0.3s;
 
-  /* Shadcn UI colors */
+  /* Shadcn UI colors - Sky Blue Default */
+  --background: var(--hue-color) 60% 97%;
+  --foreground: var(--hue-color) 15% 15%;
+  --card: var(--hue-color) 40% 95%;
+  --card-foreground: var(--hue-color) 15% 15%;
+  --popover: var(--hue-color) 40% 95%;
+  --popover-foreground: var(--hue-color) 15% 15%;
+  --primary: var(--hue-color) 69% 61%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: var(--hue-color) 40% 90%;
+  --secondary-foreground: var(--hue-color) 15% 15%;
+  --muted: var(--hue-color) 40% 90%;
+  --muted-foreground: var(--hue-color) 16.3% 46.9%;
+  --accent: var(--hue-color) 40% 90%;
+  --accent-foreground: var(--hue-color) 15% 15%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: var(--hue-color) 31.8% 85%;
+  --input: var(--hue-color) 31.8% 85%;
+  --ring: var(--hue-color) 69% 61%;
+  --radius: 0.5rem;
+
+  /* Chart colors */
+  --chart-1: var(--hue-color) 69% 61%;
+  --chart-2: calc(var(--hue-color) + 40) 69% 61%;
+  --chart-3: calc(var(--hue-color) + 80) 69% 61%;
+  --chart-4: calc(var(--hue-color) + 120) 69% 61%;
+  --chart-5: calc(var(--hue-color) + 160) 69% 61%;
+}
+
+/* Light Theme */
+.light-theme {
+  --hue-color: 190;
+  --title-color: hsl(var(--hue-color), 8%, 15%);
+  --text-color: hsl(var(--hue-color), 8%, 45%);
+  --body-color: hsl(var(--hue-color), 60%, 99%);
+  --container-color: #fff;
+  --scroll-bar-color: hsl(var(--hue-color), 22%, 90%);
+  --scroll-thumb-color: hsl(var(--hue-color), 12%, 80%);
+
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
@@ -49,22 +88,12 @@
   --muted-foreground: 215.4 16.3% 46.9%;
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: var(--hue-color) 69% 61%;
-  --radius: 0.5rem;
-
-  /* Chart colors */
-  --chart-1: var(--hue-color) 69% 61%;
-  --chart-2: calc(var(--hue-color) + 40) 69% 61%;
-  --chart-3: calc(var(--hue-color) + 80) 69% 61%;
-  --chart-4: calc(var(--hue-color) + 120) 69% 61%;
-  --chart-5: calc(var(--hue-color) + 160) 69% 61%;
 }
 
 .dark-theme {
+  --hue-color: 190;
   /* Dark theme colors */
   --title-color: hsl(var(--hue-color), 8%, 95%);
   --text-color: hsl(var(--hue-color), 8%, 75%);
@@ -95,44 +124,7 @@
   --ring: var(--hue-color) 69% 61%;
 }
 
-/* High contrast mode */
-.high-contrast {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 0%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
-  --primary: var(--hue-color) 100% 50%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 90%;
-  --secondary-foreground: 0 0% 0%;
-  --muted: 0 0% 90%;
-  --muted-foreground: 0 0% 30%;
-  --accent: 0 0% 90%;
-  --accent-foreground: 0 0% 0%;
-  --border: 0 0% 0%;
-}
-
-.high-contrast.dark-theme {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 0 0% 10%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 10%;
-  --popover-foreground: 0 0% 100%;
-  --primary: var(--hue-color) 100% 60%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 70%;
-  --accent: 0 0% 15%;
-  --accent-foreground: 0 0% 100%;
-  --border: 0 0% 100%;
-}
-
-/* Sky Blue Theme */
+/* Sky Blue Theme (Default) */
 .skyblue-theme {
   /* Sky blue theme colors */
   --hue-color: 200; /* Sky blue hue */
@@ -162,6 +154,39 @@
   --destructive-foreground: 210 40% 98%;
   --border: var(--hue-color) 31.8% 85%;
   --input: var(--hue-color) 31.8% 85%;
+  --ring: var(--hue-color) 69% 61%;
+}
+
+/* Navy Blue Theme */
+.navy-theme {
+  /* Navy blue theme colors */
+  --hue-color: 220; /* Navy blue hue */
+  --title-color: hsl(var(--hue-color), 15%, 95%);
+  --text-color: hsl(var(--hue-color), 8%, 75%);
+  --body-color: hsl(var(--hue-color), 40%, 8%);
+  --container-color: hsl(var(--hue-color), 35%, 12%);
+  --scroll-bar-color: hsl(var(--hue-color), 12%, 48%);
+  --scroll-thumb-color: hsl(var(--hue-color), 12%, 36%);
+
+  /* Shadcn UI navy colors */
+  --background: var(--hue-color) 40% 8%;
+  --foreground: var(--hue-color) 15% 95%;
+  --card: var(--hue-color) 35% 12%;
+  --card-foreground: var(--hue-color) 15% 95%;
+  --popover: var(--hue-color) 35% 12%;
+  --popover-foreground: var(--hue-color) 15% 95%;
+  --primary: var(--hue-color) 69% 61%;
+  --primary-foreground: var(--hue-color) 15% 15%;
+  --secondary: var(--hue-color) 32.6% 17.5%;
+  --secondary-foreground: var(--hue-color) 15% 95%;
+  --muted: var(--hue-color) 32.6% 17.5%;
+  --muted-foreground: var(--hue-color) 20.2% 65.1%;
+  --accent: var(--hue-color) 32.6% 17.5%;
+  --accent-foreground: var(--hue-color) 15% 95%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: var(--hue-color) 32.6% 17.5%;
+  --input: var(--hue-color) 32.6% 17.5%;
   --ring: var(--hue-color) 69% 61%;
 }
 
@@ -547,4 +572,13 @@ html {
   50% {
     transform: translateX(100%);
   }
+}
+
+/* Navy color utilities */
+.bg-navy-600 {
+  background-color: hsl(220, 69%, 30%);
+}
+
+.text-navy-600 {
+  color: hsl(220, 69%, 30%);
 }

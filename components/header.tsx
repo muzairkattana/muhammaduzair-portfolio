@@ -42,19 +42,22 @@ export default function Header() {
       transition={{ duration: 0.5 }}
     >
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo */}
-          <Link href="#home" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/50 transition-colors">
+          <Link href="#home" className="flex items-center gap-2 sm:gap-3 group">
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/50 transition-colors">
               <Image src="/images/uzair-logo.jpg" alt="Muhammad Uzair" fill className="object-cover" priority />
             </div>
-            <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+            <span className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:block">
               Muhammad Uzair
+            </span>
+            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
+              MU
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -68,10 +71,15 @@ export default function Header() {
           </nav>
 
           {/* Theme Toggle & Mobile Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden h-8 w-8 sm:h-10 sm:w-10"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
             </Button>
           </div>
         </div>
@@ -79,7 +87,7 @@ export default function Header() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <motion.nav
-            className="md:hidden py-4 border-t border-border"
+            className="lg:hidden py-4 border-t border-border"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -89,7 +97,7 @@ export default function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}

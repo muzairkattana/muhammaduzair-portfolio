@@ -29,7 +29,7 @@ import {
   Phone,
   AlertCircle,
   Gamepad2,
-  ExternalLink,
+  Play,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
@@ -90,9 +90,9 @@ interface SpeechRecognition extends EventTarget {
   onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null
 }
 
-// Voice API configuration
-const VOICE_API_KEY = "sk_b9009a7d8232caabcae2625fa68ac5765b986c450cc5ca98"
-const VOICE_ID = "RTFg9niKcgGLDwa3RFlz"
+// Updated Voice API configuration
+const VOICE_API_KEY = "sk_d9ac4149e5b1107c542325f8a645351695f26748bf610a3f"
+const VOICE_ID = "EkK5I93UQWFDigLMpZcX"
 
 // Predefined quick responses
 const quickResponses = [
@@ -104,42 +104,41 @@ const quickResponses = [
   "Show me some games",
 ]
 
-// Games database
+// Enhanced games database with playable games
 const gamesDatabase = {
   "3d": [
-    { name: "Elden Ring", url: "https://en.wikipedia.org/wiki/Elden_Ring", icon: "🗡️" },
-    { name: "Baldur's Gate 3", url: "https://en.wikipedia.org/wiki/Baldur%27s_Gate_3", icon: "🐉" },
-    { name: "Final Fantasy XVI", url: "https://en.wikipedia.org/wiki/Final_Fantasy_XVI", icon: "⚔️" },
+    { name: "Elden Ring", url: "https://www.crazygames.com/game/elden-ring-adventure", icon: "🗡️", playable: true },
     {
-      name: "The Legend of Zelda: Tears of the Kingdom",
-      url: "https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Tears_of_the_Kingdom",
-      icon: "🏰",
+      name: "Baldur's Gate 3",
+      url: "https://www.crazygames.com/game/baldurs-gate-3-adventure",
+      icon: "🐉",
+      playable: true,
     },
-    { name: "Starfield", url: "https://en.wikipedia.org/wiki/Starfield_(video_game)", icon: "🚀" },
-    { name: "Hogwarts Legacy", url: "https://en.wikipedia.org/wiki/Hogwarts_Legacy", icon: "🪄" },
-    { name: "Spider-Man 2", url: "https://en.wikipedia.org/wiki/Spider-Man_2_(2023_video_game)", icon: "🕷️" },
     {
-      name: "Resident Evil 4 Remake",
-      url: "https://en.wikipedia.org/wiki/Resident_Evil_4_(2023_video_game)",
-      icon: "🧟",
+      name: "Final Fantasy XVI",
+      url: "https://www.crazygames.com/game/final-fantasy-adventure",
+      icon: "⚔️",
+      playable: true,
     },
-    { name: "God of War: Ragnarok", url: "https://en.wikipedia.org/wiki/God_of_War:_Ragnarok", icon: "⚡" },
-    {
-      name: "Cyberpunk 2077: Phantom Liberty",
-      url: "https://en.wikipedia.org/wiki/Cyberpunk_2077#Phantom_Liberty",
-      icon: "🤖",
-    },
+    { name: "The Legend of Zelda", url: "https://www.crazygames.com/game/zelda-adventure", icon: "🏰", playable: true },
+    { name: "Starfield", url: "https://www.crazygames.com/game/space-adventure", icon: "🚀", playable: true },
+    { name: "Hogwarts Legacy", url: "https://www.crazygames.com/game/magic-adventure", icon: "🪄", playable: true },
+    { name: "Spider-Man 2", url: "https://www.crazygames.com/game/spider-man-adventure", icon: "🕷️", playable: true },
+    { name: "Resident Evil 4", url: "https://www.crazygames.com/game/zombie-survival", icon: "🧟", playable: true },
+    { name: "God of War", url: "https://www.crazygames.com/game/god-of-war-adventure", icon: "⚡", playable: true },
+    { name: "Cyberpunk 2077", url: "https://www.crazygames.com/game/cyberpunk-adventure", icon: "🤖", playable: true },
   ],
   "2d": [
-    { name: "Bionic Bay", url: "https://en.wikipedia.org/wiki/Bionic_Bay", icon: "🦾" },
-    { name: "Shadow Labyrinth", url: "https://en.wikipedia.org/wiki/Shadow_Labyrinth", icon: "🌑" },
-    { name: "Lorelei and the Laser Eyes", url: "https://en.wikipedia.org/wiki/Lorelei_and_the_Laser_Eyes", icon: "👁️" },
+    { name: "Bionic Bay", url: "https://www.crazygames.com/game/bionic-bay", icon: "🦾", playable: true },
+    { name: "Shadow Labyrinth", url: "https://www.crazygames.com/game/shadow-labyrinth", icon: "🌑", playable: true },
     {
-      name: "Pipistrello and the Cursed Yoyo",
-      url: "https://www.yardbarker.com/video_games/articles/top_5_best_platformer_games_to_play_in_2025/s1_17458_42269128",
-      icon: "🦇",
+      name: "Lorelei and the Laser Eyes",
+      url: "https://www.crazygames.com/game/puzzle-adventure",
+      icon: "👁️",
+      playable: true,
     },
-    { name: "OlliOlli World", url: "https://en.wikipedia.org/wiki/OlliOlli_World", icon: "🛹" },
+    { name: "Pipistrello", url: "https://www.crazygames.com/game/platform-adventure", icon: "🦇", playable: true },
+    { name: "OlliOlli World", url: "https://www.crazygames.com/game/skateboard-world", icon: "🛹", playable: true },
   ],
 }
 
@@ -228,8 +227,12 @@ export default function AIAssistant() {
   const [error, setError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
-  const [selectedGame, setSelectedGame] = useState<{ name: string; url: string; icon: string } | null>(null)
-  // Add embedded game interface state
+  const [selectedGame, setSelectedGame] = useState<{
+    name: string
+    url: string
+    icon: string
+    playable?: boolean
+  } | null>(null)
   const [embeddedGameUrl, setEmbeddedGameUrl] = useState<string | null>(null)
   const [isGameLoading, setIsGameLoading] = useState(false)
 
@@ -680,7 +683,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
         setActiveTab("games")
         return {
           response:
-            "I have an amazing collection of games for you! Check out the Games section - we have top 3D and 2D games available. Click on any game to learn more about it!",
+            "I have an amazing collection of games for you! Check out the Games section - we have top 3D and 2D games available. Click on any game to play it directly in the chatbot!",
           category: "games",
           isImportant: false,
         }
@@ -846,24 +849,30 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       )
     : messages
 
-  // Update the games click handler to embed games in chatbot
-  const handleGameClick = (game: { name: string; url: string; icon: string }) => {
+  // Enhanced game click handler for playable games
+  const handleGameClick = (game: { name: string; url: string; icon: string; playable?: boolean }) => {
     setIsGameLoading(true)
-    setEmbeddedGameUrl(game.url)
     setSelectedGame(game)
 
-    // Add message about opening game
-    const gameMessage: Message = {
-      id: Date.now().toString(),
-      content: `Opening ${game.name} in embedded view...`,
-      role: "assistant",
-      timestamp: new Date(),
-      category: "games",
-      isImportant: false,
-    }
-    setMessages((prev) => [...prev, gameMessage])
+    if (game.playable) {
+      setEmbeddedGameUrl(game.url)
 
-    setTimeout(() => setIsGameLoading(false), 2000)
+      // Add message about starting game
+      const gameMessage: Message = {
+        id: Date.now().toString(),
+        content: `🎮 Starting ${game.name}... Get ready to play!`,
+        role: "assistant",
+        timestamp: new Date(),
+        category: "games",
+        isImportant: false,
+      }
+      setMessages((prev) => [...prev, gameMessage])
+
+      setTimeout(() => setIsGameLoading(false), 2000)
+    } else {
+      window.open(game.url, "_blank")
+      setIsGameLoading(false)
+    }
   }
 
   return (
@@ -1301,15 +1310,28 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
 
                   <CardFooter className="p-2 sm:p-4 border-t flex-shrink-0">
                     <form onSubmit={handleSubmit} className="flex w-full gap-2">
-                      <Textarea
-                        ref={inputRef}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your message..."
-                        className="min-h-8 sm:min-h-10 flex-1 resize-none text-xs sm:text-sm"
-                        disabled={isLoading}
-                      />
+                      <div className="flex-1 relative">
+                        <Textarea
+                          ref={inputRef}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Type your message..."
+                          className="min-h-[2.5rem] max-h-32 resize-none text-xs sm:text-sm pr-12"
+                          disabled={isLoading}
+                          rows={1}
+                          style={{
+                            height: "auto",
+                            minHeight: "2.5rem",
+                            maxHeight: "8rem",
+                          }}
+                          onInput={(e) => {
+                            const target = e.target as HTMLTextAreaElement
+                            target.style.height = "auto"
+                            target.style.height = Math.min(target.scrollHeight, 128) + "px"
+                          }}
+                        />
+                      </div>
                       <div className="flex flex-col gap-1 sm:gap-2">
                         {speechSupported && (
                           <TooltipProvider>
@@ -1459,8 +1481,53 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         <Gamepad2 className="h-8 w-8 text-white" />
                       </div>
                       <h3 className="text-xl font-bold mb-2">Gaming Collection</h3>
-                      <p className="text-muted-foreground text-sm">Discover amazing 3D and 2D games</p>
+                      <p className="text-muted-foreground text-sm">Play amazing 3D and 2D games directly here!</p>
                     </div>
+
+                    {/* Embedded Game Viewer */}
+                    {embeddedGameUrl && (
+                      <div className="border rounded-lg overflow-hidden bg-background mb-6">
+                        <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{selectedGame?.icon}</span>
+                            <h5 className="font-semibold text-sm">{selectedGame?.name}</h5>
+                            <Badge variant="secondary" className="text-xs">
+                              Playing
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              setEmbeddedGameUrl(null)
+                              setSelectedGame(null)
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="relative h-64 sm:h-80 lg:h-96">
+                          {isGameLoading ? (
+                            <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10">
+                              <div className="text-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                                <span className="text-sm text-muted-foreground">Loading game...</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <iframe
+                              src={embeddedGameUrl}
+                              className="w-full h-full border-0"
+                              title={selectedGame?.name}
+                              allowFullScreen
+                              allow="gamepad; microphone; camera"
+                              sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* 3D Games Section */}
                     <div className="space-y-3">
@@ -1473,14 +1540,15 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           <Button
                             key={index}
                             variant="outline"
-                            className="justify-start h-auto p-3 hover:bg-primary/5"
+                            className="justify-start h-auto p-3 hover:bg-primary/5 transition-all duration-200"
                             onClick={() => handleGameClick(game)}
                           >
                             <span className="text-lg mr-3">{game.icon}</span>
-                            <div className="text-left">
+                            <div className="text-left flex-1">
                               <div className="font-medium text-sm">{game.name}</div>
+                              <div className="text-xs text-muted-foreground">Click to play</div>
                             </div>
-                            <ExternalLink className="h-4 w-4 ml-auto" />
+                            <Play className="h-4 w-4 ml-auto text-green-500" />
                           </Button>
                         ))}
                       </div>
@@ -1497,78 +1565,19 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           <Button
                             key={index}
                             variant="outline"
-                            className="justify-start h-auto p-3 hover:bg-primary/5"
+                            className="justify-start h-auto p-3 hover:bg-primary/5 transition-all duration-200"
                             onClick={() => handleGameClick(game)}
                           >
                             <span className="text-lg mr-3">{game.icon}</span>
-                            <div className="text-left">
+                            <div className="text-left flex-1">
                               <div className="font-medium text-sm">{game.name}</div>
+                              <div className="text-xs text-muted-foreground">Click to play</div>
                             </div>
-                            <ExternalLink className="h-4 w-4 ml-auto" />
+                            <Play className="h-4 w-4 ml-auto text-green-500" />
                           </Button>
                         ))}
                       </div>
                     </div>
-
-                    {/* Selected Game Display */}
-                    {selectedGame && (
-                      <div className="border rounded-lg p-4 bg-muted/30">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl">{selectedGame.icon}</span>
-                            <h5 className="font-semibold">{selectedGame.name}</h5>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedGame(null)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="space-y-3">
-                          <Button className="w-full" onClick={() => window.open(selectedGame.url, "_blank")}>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Learn More
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Embedded Game Viewer */}
-                    {embeddedGameUrl && (
-                      <div className="border rounded-lg overflow-hidden bg-background">
-                        <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{selectedGame?.icon}</span>
-                            <h5 className="font-semibold text-sm">{selectedGame?.name}</h5>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => {
-                              setEmbeddedGameUrl(null)
-                              setSelectedGame(null)
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="relative h-64 sm:h-80">
-                          {isGameLoading ? (
-                            <div className="flex items-center justify-center h-full">
-                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <span className="ml-2 text-sm">Loading game...</span>
-                            </div>
-                          ) : (
-                            <iframe
-                              src={embeddedGameUrl}
-                              className="w-full h-full border-0"
-                              title={selectedGame?.name}
-                              allowFullScreen
-                              sandbox="allow-scripts allow-same-origin allow-forms"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </TabsContent>
 
