@@ -28,6 +28,8 @@ import {
   Loader2,
   Phone,
   AlertCircle,
+  Gamepad2,
+  ExternalLink,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
@@ -99,8 +101,47 @@ const quickResponses = [
   "How can I contact you?",
   "What certificates do you have?",
   "What services do you offer?",
-  "Tell me about your experience",
+  "Show me some games",
 ]
+
+// Games database
+const gamesDatabase = {
+  "3d": [
+    { name: "Elden Ring", url: "https://en.wikipedia.org/wiki/Elden_Ring", icon: "🗡️" },
+    { name: "Baldur's Gate 3", url: "https://en.wikipedia.org/wiki/Baldur%27s_Gate_3", icon: "🐉" },
+    { name: "Final Fantasy XVI", url: "https://en.wikipedia.org/wiki/Final_Fantasy_XVI", icon: "⚔️" },
+    {
+      name: "The Legend of Zelda: Tears of the Kingdom",
+      url: "https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Tears_of_the_Kingdom",
+      icon: "🏰",
+    },
+    { name: "Starfield", url: "https://en.wikipedia.org/wiki/Starfield_(video_game)", icon: "🚀" },
+    { name: "Hogwarts Legacy", url: "https://en.wikipedia.org/wiki/Hogwarts_Legacy", icon: "🪄" },
+    { name: "Spider-Man 2", url: "https://en.wikipedia.org/wiki/Spider-Man_2_(2023_video_game)", icon: "🕷️" },
+    {
+      name: "Resident Evil 4 Remake",
+      url: "https://en.wikipedia.org/wiki/Resident_Evil_4_(2023_video_game)",
+      icon: "🧟",
+    },
+    { name: "God of War: Ragnarok", url: "https://en.wikipedia.org/wiki/God_of_War:_Ragnarok", icon: "⚡" },
+    {
+      name: "Cyberpunk 2077: Phantom Liberty",
+      url: "https://en.wikipedia.org/wiki/Cyberpunk_2077#Phantom_Liberty",
+      icon: "🤖",
+    },
+  ],
+  "2d": [
+    { name: "Bionic Bay", url: "https://en.wikipedia.org/wiki/Bionic_Bay", icon: "🦾" },
+    { name: "Shadow Labyrinth", url: "https://en.wikipedia.org/wiki/Shadow_Labyrinth", icon: "🌑" },
+    { name: "Lorelei and the Laser Eyes", url: "https://en.wikipedia.org/wiki/Lorelei_and_the_Laser_Eyes", icon: "👁️" },
+    {
+      name: "Pipistrello and the Cursed Yoyo",
+      url: "https://www.yardbarker.com/video_games/articles/top_5_best_platformer_games_to_play_in_2025/s1_17458_42269128",
+      icon: "🦇",
+    },
+    { name: "OlliOlli World", url: "https://en.wikipedia.org/wiki/OlliOlli_World", icon: "🛹" },
+  ],
+}
 
 // Knowledge base for the assistant
 const knowledgeBase = {
@@ -112,6 +153,7 @@ const knowledgeBase = {
     "Other: Git, Docker, AWS, SEO, Digital Marketing",
   ],
   projects: [
+    "3D Model Generator: AI-powered 3D model generation with advanced visualization",
     "Modern E-commerce Platform: Built with Next.js, Tailwind CSS, and Stripe",
     "Portfolio Website: Interactive personal portfolio with advanced animations",
     "Shop Management System: Inventory and sales tracking application",
@@ -186,6 +228,7 @@ export default function AIAssistant() {
   const [error, setError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<{ name: string; url: string; icon: string } | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -295,7 +338,7 @@ export default function AIAssistant() {
           setSpeechSupported(false)
         }
 
-        // Initialize speech synthesis
+        // Initialize speech synthesis with better error handling
         if (synth) {
           const loadVoices = () => {
             const voices = synth.getVoices()
@@ -399,8 +442,11 @@ export default function AIAssistant() {
         utterance.onerror = (event) => {
           console.error("Speech synthesis error:", event)
           setIsSpeaking(false)
-          setError("Text-to-speech error")
-          setTimeout(() => setError(null), 3000)
+          // Don't show error for common speech synthesis issues
+          if (event.error !== "interrupted" && event.error !== "canceled") {
+            setError("Text-to-speech temporarily unavailable")
+            setTimeout(() => setError(null), 3000)
+          }
         }
 
         synth.speak(utterance)
@@ -623,6 +669,16 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
         return {
           response: `Muhammad Uzair is based in ${knowledgeBase.contact.location}. He is available for remote work worldwide and in-person meetings in his local area.`,
           category: "location",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("game") || input.includes("play") || input.includes("gaming")) {
+        setActiveTab("games")
+        return {
+          response:
+            "I have an amazing collection of games for you! Check out the Games section - we have top 3D and 2D games available. Click on any game to learn more about it!",
+          category: "games",
           isImportant: false,
         }
       }
@@ -986,6 +1042,10 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   <TabsTrigger value="chat" className="flex items-center gap-1 text-xs sm:text-sm">
                     <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Chat</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="games" className="flex items-center gap-1 text-xs sm:text-sm">
+                    <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Games</span>
                   </TabsTrigger>
                   <TabsTrigger value="history" className="flex items-center gap-1 text-xs sm:text-sm">
                     <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1366,6 +1426,88 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       </div>
                     </form>
                   </CardFooter>
+                </TabsContent>
+
+                <TabsContent value="games" className="flex-1 flex flex-col p-0 m-0 min-h-0">
+                  <div className="p-4 space-y-6">
+                    {/* Games Header */}
+                    <div className="text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-4">
+                        <Gamepad2 className="h-8 w-8 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">Gaming Collection</h3>
+                      <p className="text-muted-foreground text-sm">Discover amazing 3D and 2D games</p>
+                    </div>
+
+                    {/* 3D Games Section */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-lg flex items-center gap-2">
+                        <span className="text-2xl">🎮</span>
+                        Top 3D Games
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+                        {gamesDatabase["3d"].map((game, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            className="justify-start h-auto p-3 hover:bg-primary/5"
+                            onClick={() => setSelectedGame(game)}
+                          >
+                            <span className="text-lg mr-3">{game.icon}</span>
+                            <div className="text-left">
+                              <div className="font-medium text-sm">{game.name}</div>
+                            </div>
+                            <ExternalLink className="h-4 w-4 ml-auto" />
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 2D Games Section */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-lg flex items-center gap-2">
+                        <span className="text-2xl">🕹️</span>
+                        Top 2D Games
+                      </h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {gamesDatabase["2d"].map((game, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            className="justify-start h-auto p-3 hover:bg-primary/5"
+                            onClick={() => setSelectedGame(game)}
+                          >
+                            <span className="text-lg mr-3">{game.icon}</span>
+                            <div className="text-left">
+                              <div className="font-medium text-sm">{game.name}</div>
+                            </div>
+                            <ExternalLink className="h-4 w-4 ml-auto" />
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Selected Game Display */}
+                    {selectedGame && (
+                      <div className="border rounded-lg p-4 bg-muted/30">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{selectedGame.icon}</span>
+                            <h5 className="font-semibold">{selectedGame.name}</h5>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedGame(null)}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-3">
+                          <Button className="w-full" onClick={() => window.open(selectedGame.url, "_blank")}>
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Learn More
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="history" className="flex-1 p-0 m-0 min-h-0">

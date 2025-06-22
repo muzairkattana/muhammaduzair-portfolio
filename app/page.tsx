@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import Header from "@/components/header"
-import HeroSection from "@/components/hero-section"
+import ProfessionalHeader from "@/components/professional-header"
 import AboutSection from "@/components/about-section"
 import SkillsSection from "@/components/skills-section"
 import ServicesSection from "@/components/services-section"
@@ -16,7 +16,7 @@ import TestimonialsSection from "@/components/testimonials-section"
 import PerformanceOptimizations from "@/components/performance-optimizations"
 import AIAssistant from "@/components/ai-assistant"
 import PortfolioSection from "@/components/portfolio-section"
-import TechLogosCarousel from "@/components/tech-logos-carousel"
+import EnhancedTechCarousel from "@/components/enhanced-tech-carousel"
 import ScrollToTop from "@/components/scroll-to-top"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
@@ -135,10 +135,10 @@ export default function Home() {
       <PerformanceOptimizations />
       <DynamicBackground />
       <Header />
-      <HeroSection />
+      <ProfessionalHeader />
       <AboutSection />
       <SkillsSection />
-      <TechLogosCarousel />
+      <EnhancedTechCarousel />
       <ServicesSection />
       <PortfolioSection />
       <ProjectsSection />

@@ -58,6 +58,19 @@ export default function ProjectsSection() {
 
   const projects: Project[] = [
     {
+      id: "3d-generator",
+      title: "3D Model Generator",
+      category: "web",
+      description:
+        "AI-powered 3D model generation tool with advanced wireframe visualization and real-time rendering capabilities.",
+      image: "/images/3d-model-generator.png",
+      demoUrl: "https://3dmodelgenerator.vercel.app/",
+      githubUrl: "#",
+      technologies: ["Next.js", "Three.js", "AI/ML", "WebGL", "TypeScript"],
+      details:
+        "An innovative AI-powered platform that generates complex 3D models from text descriptions. Features real-time wireframe visualization, advanced rendering capabilities, and seamless export options for various 3D formats.",
+    },
+    {
       id: "1",
       title: "Modern Dashboard",
       category: "web",
