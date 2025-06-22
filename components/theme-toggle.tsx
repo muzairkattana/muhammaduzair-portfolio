@@ -5,12 +5,11 @@ import { Moon, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 
-export default function ThemeToggle() {
+function ThemeToggleComponent() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    // Check if dark mode is already set
     const isDark = document.body.classList.contains("dark-theme")
     setIsDarkMode(isDark)
     setIsMounted(true)
@@ -19,14 +18,7 @@ export default function ThemeToggle() {
   const toggleTheme = () => {
     const newDarkMode = !isDarkMode
     setIsDarkMode(newDarkMode)
-
-    if (newDarkMode) {
-      document.body.classList.add("dark-theme")
-    } else {
-      document.body.classList.remove("dark-theme")
-    }
-
-    // Save to localStorage
+    document.body.classList.toggle("dark-theme", newDarkMode)
     localStorage.setItem("portfolio-dark-mode", newDarkMode.toString())
   }
 
@@ -46,3 +38,12 @@ export default function ThemeToggle() {
     </motion.div>
   )
 }
+
+/* -------------------------------------------------
+   Exports
+--------------------------------------------------*/
+
+// Default export (what we had before)
+export default ThemeToggleComponent
+// Named export so `import { ThemeToggle }` also works
+export const ThemeToggle = ThemeToggleComponent

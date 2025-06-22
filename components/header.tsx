@@ -2,170 +2,103 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
+import { motion } from "framer-motion"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useMediaQuery } from "@/hooks/use-media-query"
-import Image from "next/image"
-
-interface NavItem {
-  label: string
-  href: string
-}
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [isProfileHovered, setIsProfileHovered] = useState(false)
-  const isMobile = useMediaQuery("(max-width: 768px)")
-
-  const navItems: NavItem[] = [
-    { label: "Home", href: "#home" },
-    { label: "About", href: "#about" },
-    { label: "Skills", href: "#skills" },
-    { label: "Services", href: "#services" },
-    { label: "Certificates", href: "#certificates" },
-    { label: "Portfolio", href: "#portfolio" },
-    { label: "Contact", href: "#contact" },
-  ]
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      const offset = window.scrollY
-      if (offset > 50) {
-        setScrolled(true)
-      } else {
-        setScrolled(false)
-      }
+      setIsScrolled(window.scrollY > 50)
     }
 
     window.addEventListener("scroll", handleScroll)
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-    }
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    // Close mobile menu when switching to desktop
-    if (!isMobile && isOpen) {
-      setIsOpen(false)
-    }
-  }, [isMobile, isOpen])
-
-  // Prevent scrolling when mobile menu is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
-    return () => {
-      document.body.style.overflow = "unset"
-    }
-  }, [isOpen])
+  const navItems = [
+    { href: "#home", label: "Home" },
+    { href: "#about", label: "About" },
+    { href: "#skills", label: "Skills" },
+    { href: "#services", label: "Services" },
+    { href: "#portfolio", label: "Portfolio" },
+    { href: "#certificates", label: "Certificates" },
+    { href: "#testimonials", label: "Testimonials" },
+    { href: "#contact", label: "Contact" },
+  ]
 
   return (
-    <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        scrolled ? "bg-background/80 backdrop-blur-md shadow-md py-2" : "bg-transparent py-4"
+    <motion.header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-background/95 backdrop-blur-md shadow-lg" : "bg-transparent"
       }`}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
     >
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <motion.div
-                className="relative"
-                onMouseEnter={() => setIsProfileHovered(true)}
-                onMouseLeave={() => setIsProfileHovered(false)}
-                onTouchStart={() => setIsProfileHovered(true)}
-                onTouchEnd={() => setIsProfileHovered(false)}
-              >
-                <motion.div
-                  animate={{
-                    scale: isProfileHovered ? 1.2 : 1,
-                    zIndex: isProfileHovered ? 60 : 50,
-                  }}
-                  transition={{ duration: 0.2 }}
-                  className="relative overflow-hidden rounded-full border-2 border-primary"
-                  style={{ width: isProfileHovered ? "48px" : "40px", height: isProfileHovered ? "48px" : "40px" }}
-                >
-                  <Image
-                    src="/images/profile.png"
-                    alt="Muhammad Uzair"
-                    width={isProfileHovered ? 48 : 40}
-                    height={isProfileHovered ? 48 : 40}
-                    className="object-cover"
-                  />
-                </motion.div>
-              </motion.div>
-              <Link href="#home" className="text-xl md:text-2xl font-bold text-foreground">
-                Muhammad Uzair
-              </Link>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="#home" className="flex items-center gap-3 group">
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/50 transition-colors">
+              <Image src="/images/uzair-profile.jpg" alt="Muhammad Uzair" fill className="object-cover" priority />
             </div>
-            <div className="hidden md:block"></div>
-          </div>
+            <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+              Muhammad Uzair
+            </span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
-                key={item.label}
+                key={item.href}
                 href={item.href}
-                className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative group"
               >
                 {item.label}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
               </Link>
             ))}
-            <Button asChild size="sm" className="ml-2">
-              <Link href="#contact">Hire Me</Link>
-            </Button>
           </nav>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label={isOpen ? "Close menu" : "Open menu"}
-          >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </Button>
+          {/* Theme Toggle & Mobile Menu */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Navigation */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <motion.nav
+            className="md:hidden py-4 border-t border-border"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-background border-t mt-2"
           >
-            <div className="container mx-auto px-4 py-4">
-              <nav className="flex flex-col gap-2">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="px-4 py-3 text-foreground hover:bg-muted rounded-md transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <div className="mt-2 p-2"></div>
-                <Button asChild className="mt-2" onClick={() => setIsOpen(false)}>
-                  <Link href="#contact">Hire Me</Link>
-                </Button>
-              </nav>
+            <div className="flex flex-col space-y-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
-          </motion.div>
+          </motion.nav>
         )}
-      </AnimatePresence>
-    </header>
+      </div>
+    </motion.header>
   )
 }

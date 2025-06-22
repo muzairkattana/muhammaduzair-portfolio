@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Linkedin, Twitter, Github, ArrowDown, MessageSquare, Download } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import EnhancedProfileImage from "./enhanced-profile-image"
+import { ClickableText } from "./clickable-text"
 
 export default function HeroSection() {
   const controls = useAnimation()
@@ -69,7 +70,7 @@ export default function HeroSection() {
                 </Badge>
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+              <ClickableText as="h1" className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                 Hi, I'm{" "}
                 <span
                   className="text-primary transition-all duration-300 hover:scale-110 hover:text-transparent hover:bg-gradient-to-r hover:from-primary hover:via-purple-500 hover:to-pink-500 hover:bg-clip-text inline-block cursor-pointer transform-gpu"
@@ -77,17 +78,17 @@ export default function HeroSection() {
                 >
                   Muhammad Uzair
                 </span>
-              </h1>
+              </ClickableText>
 
-              <p className="text-xl text-muted-foreground mt-2 mb-4">
+              <ClickableText as="p" className="text-xl text-muted-foreground mt-2 mb-4">
                 Transforming ideas into exceptional digital experiences
-              </p>
+              </ClickableText>
 
-              <p className="text-muted-foreground max-w-xl mx-auto lg:mx-0">
+              <ClickableText as="p" className="text-muted-foreground max-w-xl mx-auto lg:mx-0">
                 As a professional Full Stack Developer with expertise in modern web technologies and e-commerce
                 solutions, I deliver high-quality, scalable applications that drive business growth and enhance user
                 experience.
-              </p>
+              </ClickableText>
 
               <div className="flex flex-wrap gap-4 justify-center lg:justify-start mt-6">
                 <Button asChild size="lg" className="gap-2 rounded-full">

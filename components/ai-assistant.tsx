@@ -34,6 +34,7 @@ import {
   ExternalLink,
   Maximize,
   Minimize,
+  Phone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
@@ -92,6 +93,9 @@ interface SpeechRecognition extends EventTarget {
   onerror: ((this: SpeechRecognition, ev: Event) => any) | null
   onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null
 }
+
+// Voice API configuration
+const VOICE_API_KEY = "sk_b9009a7d8232caabcae2625fa68ac5765b986c450cc5ca98"
 
 // Predefined quick responses
 const quickResponses = [
@@ -197,6 +201,7 @@ export default function AIAssistant() {
   const [showGame, setShowGame] = useState(false)
   const [gameExpanded, setGameExpanded] = useState(false)
   const [activeGameTab, setActiveGameTab] = useState("deadshot")
+  const [isVoiceCallActive, setIsVoiceCallActive] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -216,7 +221,7 @@ export default function AIAssistant() {
 
   // Auto-close when cursor is removed
   useEffect(() => {
-    if (autoClose && !isHovering && isOpen) {
+    if (autoClose && !isHovering && isOpen && !gameExpanded) {
       autoCloseTimeoutRef.current = setTimeout(() => {
         setIsOpen(false)
       }, 5000) // 5 seconds delay before closing
@@ -227,7 +232,7 @@ export default function AIAssistant() {
         clearTimeout(autoCloseTimeoutRef.current)
       }
     }
-  }, [isHovering, autoClose, isOpen])
+  }, [isHovering, autoClose, isOpen, gameExpanded])
 
   // Check if scroll buttons should be shown
   useEffect(() => {
@@ -422,6 +427,43 @@ export default function AIAssistant() {
         callback()
       }
     }, 15) // Adjust speed as needed
+  }
+
+  const handleVoiceCall = async () => {
+    setIsVoiceCallActive(!isVoiceCallActive)
+
+    if (!isVoiceCallActive) {
+      // Start voice call simulation
+      try {
+        // Here you would integrate with the voice API using the provided key
+        console.log("Starting voice call with API key:", VOICE_API_KEY)
+
+        // Simulate voice call functionality
+        const response = await fetch("/api/voice-call", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${VOICE_API_KEY}`,
+          },
+          body: JSON.stringify({
+            action: "start_call",
+            user_id: "user_123",
+          }),
+        })
+
+        if (response.ok) {
+          // Voice call started successfully
+          speakText("Voice call started. How can I help you today?")
+        }
+      } catch (error) {
+        console.error("Voice call error:", error)
+        setIsVoiceCallActive(false)
+      }
+    } else {
+      // End voice call
+      if (synth) synth.cancel()
+      console.log("Ending voice call")
+    }
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -661,7 +703,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-6 right-6 z-50"
+            className={`fixed z-50 ${gameExpanded ? "inset-4" : isExpanded ? "inset-4" : "bottom-6 right-6"}`}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -672,32 +714,68 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
           >
             <Card
               className={`shadow-xl border-primary/20 overflow-hidden ${
-                isExpanded || gameExpanded ? "fixed inset-4 h-auto w-auto" : "w-[380px] h-[600px]"
+                gameExpanded || isExpanded ? "h-full w-full" : "w-[90vw] max-w-[380px] h-[600px] sm:w-[380px]"
               }`}
             >
-              <CardHeader className="p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border-2 border-white/20">
-                    <AvatarImage src="/images/profile.png" alt="Muhammad Uzair" />
-                    <AvatarFallback className="bg-primary-foreground text-primary">MU</AvatarFallback>
+              <CardHeader
+                className={`p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 ${gameExpanded ? "min-h-[60px]" : ""}`}
+              >
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/20 flex-shrink-0">
+                    <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                    <AvatarFallback className="bg-primary-foreground text-primary text-xs sm:text-sm">
+                      MU
+                    </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-white">Muhammad Uzair's Assistant</h3>
-                    <div className="flex items-center gap-1">
-                      <Badge variant="outline" className="text-xs bg-white/10 text-white border-white/20">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-white text-sm sm:text-base truncate">
+                      Muhammad Uzair's Assistant
+                    </h3>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] sm:text-xs bg-white/10 text-white border-white/20 px-1 sm:px-2 py-0.5"
+                      >
                         AI Powered
                       </Badge>
-                      <Badge variant="outline" className="text-xs bg-green-500/20 text-green-300 border-green-500/30">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] sm:text-xs bg-green-500/20 text-green-300 border-green-500/30 px-1 sm:px-2 py-0.5"
+                      >
                         Online
                       </Badge>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10 ${
+                            isVoiceCallActive ? "bg-green-500/30" : ""
+                          }`}
+                          onClick={handleVoiceCall}
+                        >
+                          <Phone className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isVoiceCallActive ? "End Voice Call" : "Start Voice Call"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10">
-                        <Settings className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
+                      >
+                        <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -739,14 +817,24 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-white hover:bg-white/10"
-                          onClick={() => setIsExpanded(!isExpanded)}
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
+                          onClick={() => {
+                            if (gameExpanded) {
+                              setGameExpanded(false)
+                            } else {
+                              setIsExpanded(!isExpanded)
+                            }
+                          }}
                         >
-                          {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                          {isExpanded || gameExpanded ? (
+                            <Minimize2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          ) : (
+                            <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{isExpanded ? "Minimize" : "Maximize"}</p>
+                        <p>{isExpanded || gameExpanded ? "Minimize" : "Maximize"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -756,10 +844,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-white hover:bg-white/10"
-                          onClick={() => setIsOpen(false)}
+                          className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
+                          onClick={() => {
+                            setIsOpen(false)
+                            setGameExpanded(false)
+                          }}
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -773,31 +864,33 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
-                className={`flex flex-col ${isExpanded ? "h-[calc(100%-64px)]" : "h-[calc(600px-64px)]"}`}
+                className={`flex flex-col ${
+                  gameExpanded || isExpanded ? "h-[calc(100%-60px)]" : "h-[calc(600px-64px)]"
+                }`}
               >
-                <TabsList className="w-full justify-start px-4 pt-2 bg-background">
-                  <TabsTrigger value="chat" className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Chat</span>
+                <TabsList className="w-full justify-start px-2 sm:px-4 pt-2 bg-background">
+                  <TabsTrigger value="chat" className="flex items-center gap-1 text-xs sm:text-sm">
+                    <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Chat</span>
                   </TabsTrigger>
-                  <TabsTrigger value="games" className="flex items-center gap-1">
-                    <Gamepad2 className="h-4 w-4" />
-                    <span>Games</span>
+                  <TabsTrigger value="games" className="flex items-center gap-1 text-xs sm:text-sm">
+                    <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Games</span>
                   </TabsTrigger>
-                  <TabsTrigger value="history" className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    <span>History</span>
+                  <TabsTrigger value="history" className="flex items-center gap-1 text-xs sm:text-sm">
+                    <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">History</span>
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-                  <div className="p-4 border-b flex items-center gap-2">
+                  <div className="p-2 sm:p-4 border-b flex items-center gap-2">
                     <Search className="h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search in conversation..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="h-8 border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
                     />
                     {searchQuery && (
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSearchQuery("")}>
@@ -835,7 +928,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       <ChevronDown className="h-4 w-4" />
                     </Button>
 
-                    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef as any} onScroll={handleScroll}>
+                    <ScrollArea className="flex-1 p-2 sm:p-4" ref={scrollAreaRef as any} onScroll={handleScroll}>
                       <div className="space-y-4">
                         {filteredMessages.map((message) => (
                           <div
@@ -853,24 +946,24 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 {message.role === "assistant" ? (
-                                  <Avatar className="h-6 w-6">
-                                    <AvatarImage src="/images/profile.png" alt="Muhammad Uzair" />
-                                    <AvatarFallback>MU</AvatarFallback>
+                                  <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
+                                    <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                    <AvatarFallback className="text-xs">MU</AvatarFallback>
                                   </Avatar>
                                 ) : (
-                                  <User className="h-4 w-4" />
+                                  <User className="h-3 w-3 sm:h-4 sm:w-4" />
                                 )}
-                                <span className="text-xs opacity-70">
+                                <span className="text-[10px] sm:text-xs opacity-70">
                                   {message.role === "assistant" ? "Muhammad Uzair's Assistant" : "You"}
                                 </span>
                                 {message.category && (
-                                  <Badge variant="outline" className="text-[10px] h-4 px-1">
+                                  <Badge variant="outline" className="text-[8px] sm:text-[10px] h-3 sm:h-4 px-1">
                                     {message.category}
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                              <div className="text-xs opacity-50 mt-1 text-right">
+                              <p className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</p>
+                              <div className="text-[10px] sm:text-xs opacity-50 mt-1 text-right">
                                 {message.timestamp.toLocaleTimeString([], {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -887,13 +980,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-6 w-6"
+                                          className="h-5 w-5 sm:h-6 sm:w-6"
                                           onClick={() => copyToClipboard(message.content, message.id)}
                                         >
                                           {copiedMessageId === message.id ? (
-                                            <Check className="h-3 w-3" />
+                                            <Check className="h-2 w-2 sm:h-3 sm:w-3" />
                                           ) : (
-                                            <Copy className="h-3 w-3" />
+                                            <Copy className="h-2 w-2 sm:h-3 sm:w-3" />
                                           )}
                                         </Button>
                                       </TooltipTrigger>
@@ -910,13 +1003,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                                           <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-6 w-6"
+                                            className="h-5 w-5 sm:h-6 sm:w-6"
                                             onClick={() => toggleSpeech(message.content)}
                                           >
                                             {isSpeaking ? (
-                                              <VolumeX className="h-3 w-3" />
+                                              <VolumeX className="h-2 w-2 sm:h-3 sm:w-3" />
                                             ) : (
-                                              <Volume2 className="h-3 w-3" />
+                                              <Volume2 className="h-2 w-2 sm:h-3 sm:w-3" />
                                             )}
                                           </Button>
                                         </TooltipTrigger>
@@ -937,13 +1030,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           <div className="flex justify-start">
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src="/images/profile.png" alt="Muhammad Uzair" />
-                                  <AvatarFallback>MU</AvatarFallback>
+                                <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
+                                  <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                  <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
-                                <span className="text-xs opacity-70">Muhammad Uzair's Assistant</span>
+                                <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
                               </div>
-                              <p className="text-sm whitespace-pre-wrap">
+                              <p className="text-xs sm:text-sm whitespace-pre-wrap">
                                 {typingText}
                                 <span className="animate-pulse">|</span>
                               </p>
@@ -956,11 +1049,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           <div className="flex justify-start">
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src="/images/profile.png" alt="Muhammad Uzair" />
-                                  <AvatarFallback>MU</AvatarFallback>
+                                <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
+                                  <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                  <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
-                                <span className="text-xs opacity-70">Muhammad Uzair's Assistant</span>
+                                <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
                               </div>
                               <div className="flex space-x-1 items-center">
                                 <div
@@ -985,14 +1078,14 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   </div>
 
                   {/* Quick responses */}
-                  <div className="px-4 py-2 border-t">
+                  <div className="px-2 sm:px-4 py-2 border-t">
                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
                       {quickResponses.map((response) => (
                         <Button
                           key={response}
                           variant="outline"
                           size="sm"
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap text-xs"
                           onClick={() => handleQuickResponse(response)}
                         >
                           {response}
@@ -1001,7 +1094,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                     </div>
                   </div>
 
-                  <CardFooter className="p-4 border-t">
+                  <CardFooter className="p-2 sm:p-4 border-t">
                     <form onSubmit={handleSubmit} className="flex w-full gap-2">
                       <Textarea
                         ref={inputRef}
@@ -1009,9 +1102,9 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="Type your message..."
-                        className="min-h-10 flex-1 resize-none"
+                        className="min-h-8 sm:min-h-10 flex-1 resize-none text-xs sm:text-sm"
                       />
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1 sm:gap-2">
                         {speechSupported && (
                           <TooltipProvider>
                             <Tooltip>
@@ -1021,9 +1114,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                                   variant="outline"
                                   size="icon"
                                   onClick={toggleListening}
-                                  className={isListening ? "bg-red-100 dark:bg-red-900/30" : ""}
+                                  className={`h-8 w-8 sm:h-10 sm:w-10 ${isListening ? "bg-red-100 dark:bg-red-900/30" : ""}`}
                                 >
-                                  {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                  {isListening ? (
+                                    <MicOff className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  ) : (
+                                    <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  )}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -1039,9 +1136,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                               type="button"
                               variant="outline"
                               size="icon"
-                              className={isSpeaking ? "bg-primary/20" : ""}
+                              className={`h-8 w-8 sm:h-10 sm:w-10 ${isSpeaking ? "bg-primary/20" : ""}`}
                             >
-                              {isSpeaking ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                              {isSpeaking ? (
+                                <VolumeX className="h-3 w-3 sm:h-4 sm:w-4" />
+                              ) : (
+                                <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent side="top" align="end" className="w-80">
@@ -1130,9 +1231,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           type="submit"
                           size="icon"
                           disabled={isLoading || !input.trim()}
-                          className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                          className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                         >
-                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                          {isLoading ? (
+                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+                          )}
                         </Button>
                       </div>
                     </form>
@@ -1187,30 +1292,37 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         </div>
                       ) : (
                         <div className="flex-1 flex flex-col">
-                          <div className="p-2 border-b flex items-center justify-between">
+                          <div className="p-2 border-b flex items-center justify-between bg-muted/30">
                             <div className="flex items-center gap-2">
                               <span className="text-2xl">🎯</span>
-                              <span className="font-medium">Deadshot.io</span>
+                              <span className="font-medium text-sm sm:text-base">Deadshot.io</span>
                             </div>
                             <div className="flex gap-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
                                 onClick={() => window.open("https://deadshot.io/", "_blank")}
                               >
-                                <ExternalLink className="h-4 w-4" />
+                                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => setGameExpanded(false)}>
-                                <Minimize className="h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 sm:h-8 sm:w-8"
+                                onClick={() => setGameExpanded(false)}
+                              >
+                                <Minimize className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </div>
-                          <div className="flex-1">
+                          <div className="flex-1 relative">
                             <iframe
                               src="https://deadshot.io/"
                               className="w-full h-full border-0"
                               title="Deadshot.io Game"
                               allow="fullscreen; gamepad; microphone; camera"
+                              style={{ minHeight: gameExpanded ? "calc(100vh - 200px)" : "400px" }}
                             />
                           </div>
                         </div>

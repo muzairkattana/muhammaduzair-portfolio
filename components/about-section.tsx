@@ -9,6 +9,7 @@ import { Download } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import Timeline from "./timeline"
 import SkillRadar from "./skill-radar"
+import { ClickableText } from "./clickable-text"
 
 export default function AboutSection() {
   const controls = useAnimation()
@@ -91,10 +92,12 @@ export default function AboutSection() {
       <div className="container mx-auto px-4 md:px-6">
         <motion.div ref={ref} variants={containerVariants} initial="hidden" animate={controls} className="space-y-16">
           <motion.div variants={itemVariants} className="text-center">
-            <h2 className="text-3xl font-bold mb-2">About Me</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <ClickableText as="h2" className="text-3xl font-bold mb-2">
+              About Me
+            </ClickableText>
+            <ClickableText as="p" className="text-muted-foreground max-w-xl mx-auto">
               Get to know more about me and my professional journey
-            </p>
+            </ClickableText>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -107,31 +110,43 @@ export default function AboutSection() {
             </motion.div>
 
             <motion.div variants={itemVariants} className="space-y-6">
-              <p className="text-lg">
+              <ClickableText as="p" className="text-lg">
                 Meet Muhammad Uzair, a talented individual with a diverse skill set in the fields of full-stack
                 development, Amazon wholesaling, and Artificial Intelligence. With expertise in both front-end and
                 back-end development, a successful business as an Amazon wholesaler, and a deep understanding of
                 software systems, Muhammad Uzair brings a unique blend of technical knowledge and entrepreneurial spirit
                 to the table.
-              </p>
+              </ClickableText>
 
               <div className="grid grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <h3 className="text-3xl font-bold text-primary">01+</h3>
-                    <p className="text-sm text-muted-foreground">Years Experience</p>
+                    <ClickableText as="h3" className="text-3xl font-bold text-primary">
+                      01+
+                    </ClickableText>
+                    <ClickableText as="p" className="text-sm text-muted-foreground">
+                      Years Experience
+                    </ClickableText>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <h3 className="text-3xl font-bold text-primary">05+</h3>
-                    <p className="text-sm text-muted-foreground">Completed Certifications</p>
+                    <ClickableText as="h3" className="text-3xl font-bold text-primary">
+                      05+
+                    </ClickableText>
+                    <ClickableText as="p" className="text-sm text-muted-foreground">
+                      Completed Certifications
+                    </ClickableText>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <h3 className="text-3xl font-bold text-primary">01</h3>
-                    <p className="text-sm text-muted-foreground">Company Worked</p>
+                    <ClickableText as="h3" className="text-3xl font-bold text-primary">
+                      01
+                    </ClickableText>
+                    <ClickableText as="p" className="text-sm text-muted-foreground">
+                      Company Worked
+                    </ClickableText>
                   </CardContent>
                 </Card>
               </div>
@@ -144,12 +159,16 @@ export default function AboutSection() {
 
           <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-12 items-start">
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold">My Journey</h3>
+              <ClickableText as="h3" className="text-2xl font-bold">
+                My Journey
+              </ClickableText>
               <Timeline items={timelineItems} />
             </div>
 
             <div className="space-y-6">
-              <h3 className="text-2xl font-bold">Skills Overview</h3>
+              <ClickableText as="h3" className="text-2xl font-bold">
+                Skills Overview
+              </ClickableText>
               <SkillRadar skills={skills} className="mx-auto" />
             </div>
           </motion.div>
