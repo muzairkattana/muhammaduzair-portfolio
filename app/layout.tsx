@@ -14,7 +14,10 @@ export const metadata: Metadata = {
   description:
     "Professional portfolio of Muhammad Uzair, a Full Stack Developer and Amazon FBA Specialist with expertise in web development and e-commerce.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+    ],
     shortcut: "/favicon.ico",
     apple: "/favicon.ico",
   },

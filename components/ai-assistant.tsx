@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Mic,
@@ -13,7 +12,6 @@ import {
   Minimize2,
   Volume2,
   VolumeX,
-  Bot,
   User,
   ChevronDown,
   Settings,
@@ -26,13 +24,10 @@ import {
   MessageSquare,
   Clock,
   Search,
-  Sparkles,
-  Zap,
   ChevronUp,
   Loader2,
-  Gamepad2,
-  ExternalLink,
   Phone,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
@@ -55,6 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Message {
   id: string
@@ -153,17 +149,6 @@ const knowledgeBase = {
   ],
 }
 
-const availableGames = [
-  {
-    id: "deadshot",
-    name: "Deadshot.io",
-    url: "https://deadshot.io/",
-    icon: "🎯",
-    description: "Fast-paced multiplayer shooting game",
-    category: "Action",
-  },
-]
-
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -197,8 +182,10 @@ export default function AIAssistant() {
   const [isTyping, setIsTyping] = useState(false)
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [showGame, setShowGame] = useState(false)
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isButtonHovered, setIsButtonHovered] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -208,21 +195,24 @@ export default function AIAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const gameIframeRef = useRef<HTMLIFrameElement>(null)
 
   // Scroll to bottom of messages
-  useEffect(() => {
+  const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
     }
-  }, [messages])
+  }, [])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, scrollToBottom])
 
   // Auto-close when cursor is removed
   useEffect(() => {
-    if (autoClose && !isHovering && isOpen && !showGame) {
+    if (autoClose && !isHovering && isOpen) {
       autoCloseTimeoutRef.current = setTimeout(() => {
         setIsOpen(false)
-      }, 5000) // 5 seconds delay before closing
+      }, 5000)
     }
 
     return () => {
@@ -230,7 +220,7 @@ export default function AIAssistant() {
         clearTimeout(autoCloseTimeoutRef.current)
       }
     }
-  }, [isHovering, autoClose, isOpen, showGame])
+  }, [isHovering, autoClose, isOpen])
 
   // Check if scroll buttons should be shown
   useEffect(() => {
@@ -245,10 +235,9 @@ export default function AIAssistant() {
     const scrollElement = scrollAreaRef.current
     if (scrollElement) {
       scrollElement.addEventListener("scroll", checkScrollable)
+      checkScrollable()
     }
 
-    checkScrollable()
-    // Add resize event listener to check when window size changes
     window.addEventListener("resize", checkScrollable)
 
     return () => {
@@ -261,76 +250,94 @@ export default function AIAssistant() {
 
   // Initialize speech recognition and synthesis
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Check if browser supports speech recognition
-      const SpeechRecognitionAPI =
-        window.SpeechRecognition ||
-        (window as any).webkitSpeechRecognition ||
-        (window as any).mozSpeechRecognition ||
-        (window as any).msSpeechRecognition
+    if (typeof window !== "undefined" && !isInitialized) {
+      try {
+        // Check if browser supports speech recognition
+        const SpeechRecognitionAPI =
+          window.SpeechRecognition ||
+          (window as any).webkitSpeechRecognition ||
+          (window as any).mozSpeechRecognition ||
+          (window as any).msSpeechRecognition
 
-      if (SpeechRecognitionAPI) {
-        setSpeechSupported(true)
-        recognitionRef.current = new SpeechRecognitionAPI() as SpeechRecognition
-        recognitionRef.current.continuous = true
-        recognitionRef.current.interimResults = true
+        if (SpeechRecognitionAPI) {
+          setSpeechSupported(true)
+          recognitionRef.current = new SpeechRecognitionAPI() as SpeechRecognition
+          recognitionRef.current.continuous = true
+          recognitionRef.current.interimResults = true
+          recognitionRef.current.lang = "en-US"
 
-        recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
-          let finalTranscript = ""
+          recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+            let finalTranscript = ""
 
-          for (let i = 0; i < event.results.length; i++) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript
+            for (let i = 0; i < event.results.length; i++) {
+              if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript
+              }
+            }
+
+            if (finalTranscript) {
+              setInput(finalTranscript.trim())
             }
           }
 
-          if (finalTranscript) {
-            setInput(finalTranscript)
+          recognitionRef.current.onerror = (event) => {
+            console.error("Speech recognition error", event)
+            setIsListening(false)
+            setError("Speech recognition error. Please try again.")
+            setTimeout(() => setError(null), 3000)
           }
-        }
 
-        recognitionRef.current.onerror = (event) => {
-          console.error("Speech recognition error", event)
-          setIsListening(false)
-        }
-      } else {
-        console.log("Speech recognition not supported in this browser")
-        setSpeechSupported(false)
-      }
-
-      // Initialize speech synthesis
-      if (synth) {
-        // Load available voices
-        const loadVoices = () => {
-          const voices = synth.getVoices()
-          setAvailableVoices(voices)
-
-          // Set voice with specific ID or default voice
-          const specificVoice = voices.find((voice) => voice.voiceURI === VOICE_ID)
-          const defaultVoice =
-            specificVoice ||
-            voices.find((voice) => voice.lang.includes("en") && voice.name.includes("Female")) ||
-            voices.find((voice) => voice.lang.includes("en")) ||
-            voices[0]
-
-          if (defaultVoice) {
-            setSelectedVoice(defaultVoice)
+          recognitionRef.current.onend = () => {
+            setIsListening(false)
           }
+        } else {
+          console.log("Speech recognition not supported in this browser")
+          setSpeechSupported(false)
         }
 
-        // Chrome loads voices asynchronously
-        if (synth.onvoiceschanged !== undefined) {
-          synth.onvoiceschanged = loadVoices
+        // Initialize speech synthesis
+        if (synth) {
+          const loadVoices = () => {
+            const voices = synth.getVoices()
+            setAvailableVoices(voices)
+
+            // Set voice with specific ID or default voice
+            const specificVoice = voices.find((voice) => voice.voiceURI === VOICE_ID || voice.name.includes(VOICE_ID))
+            const defaultVoice =
+              specificVoice ||
+              voices.find((voice) => voice.lang.includes("en") && voice.name.toLowerCase().includes("female")) ||
+              voices.find((voice) => voice.lang.includes("en")) ||
+              voices[0]
+
+            if (defaultVoice) {
+              setSelectedVoice(defaultVoice)
+            }
+          }
+
+          // Chrome loads voices asynchronously
+          if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices
+          }
+
+          // Initial load attempt
+          loadVoices()
         }
 
-        // Initial load attempt
-        loadVoices()
+        setIsInitialized(true)
+      } catch (error) {
+        console.error("Error initializing speech features:", error)
+        setError("Failed to initialize speech features")
+        setTimeout(() => setError(null), 3000)
       }
     }
 
     return () => {
       if (recognitionRef.current) {
-        recognitionRef.current.stop()
+        try {
+          recognitionRef.current.stop()
+        } catch (error) {
+          console.error("Error stopping speech recognition:", error)
+        }
       }
       if (synth) {
         synth.cancel()
@@ -339,99 +346,90 @@ export default function AIAssistant() {
         clearInterval(typingIntervalRef.current)
       }
     }
-  }, [])
+  }, [isInitialized, synth])
 
-  // Handle game iframe pointer lock
-  useEffect(() => {
-    const handleGameFocus = () => {
-      if (gameIframeRef.current && showGame) {
-        // Request pointer lock when game is focused
-        gameIframeRef.current.requestPointerLock =
-          gameIframeRef.current.requestPointerLock ||
-          (gameIframeRef.current as any).mozRequestPointerLock ||
-          (gameIframeRef.current as any).webkitRequestPointerLock
-
-        if (gameIframeRef.current.requestPointerLock) {
-          gameIframeRef.current.requestPointerLock()
-        }
-      }
+  const toggleListening = useCallback(() => {
+    if (!recognitionRef.current || !speechSupported) {
+      setError("Speech recognition not supported")
+      setTimeout(() => setError(null), 3000)
+      return
     }
 
-    if (showGame && gameIframeRef.current) {
-      gameIframeRef.current.addEventListener("click", handleGameFocus)
-      return () => {
-        if (gameIframeRef.current) {
-          gameIframeRef.current.removeEventListener("click", handleGameFocus)
-        }
-      }
-    }
-  }, [showGame])
-
-  const toggleListening = () => {
-    if (!recognitionRef.current || !speechSupported) return
-
-    if (isListening) {
-      recognitionRef.current.stop()
-      setIsListening(false)
-    } else {
-      try {
+    try {
+      if (isListening) {
+        recognitionRef.current.stop()
+        setIsListening(false)
+      } else {
         recognitionRef.current.start()
         setIsListening(true)
-      } catch (error) {
-        console.error("Error starting speech recognition:", error)
-        // If there's an error (like recognition is already started), try stopping first
-        try {
-          recognitionRef.current.stop()
-          setTimeout(() => {
-            if (recognitionRef.current) {
-              recognitionRef.current.start()
-              setIsListening(true)
-            }
-          }, 100)
-        } catch (stopError) {
-          console.error("Error stopping speech recognition:", stopError)
-        }
+        setError(null)
       }
+    } catch (error) {
+      console.error("Error toggling speech recognition:", error)
+      setError("Failed to start speech recognition")
+      setTimeout(() => setError(null), 3000)
+      setIsListening(false)
     }
-  }
+  }, [isListening, speechSupported])
 
-  const speakText = (text: string) => {
-    if (!synth) return
+  const speakText = useCallback(
+    (text: string) => {
+      if (!synth) {
+        setError("Text-to-speech not supported")
+        setTimeout(() => setError(null), 3000)
+        return
+      }
 
-    // Cancel any ongoing speech
-    synth.cancel()
+      try {
+        // Cancel any ongoing speech
+        synth.cancel()
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = voiceSpeed
-    utterance.pitch = voicePitch
-    utterance.volume = 1
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = voiceSpeed
+        utterance.pitch = voicePitch
+        utterance.volume = 1
 
-    // Set selected voice if available
-    if (selectedVoice) {
-      utterance.voice = selectedVoice
-    }
+        // Set selected voice if available
+        if (selectedVoice) {
+          utterance.voice = selectedVoice
+        }
 
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
+        utterance.onstart = () => setIsSpeaking(true)
+        utterance.onend = () => setIsSpeaking(false)
+        utterance.onerror = (event) => {
+          console.error("Speech synthesis error:", event)
+          setIsSpeaking(false)
+          setError("Text-to-speech error")
+          setTimeout(() => setError(null), 3000)
+        }
 
-    synth.speak(utterance)
-  }
+        synth.speak(utterance)
+      } catch (error) {
+        console.error("Error speaking text:", error)
+        setError("Failed to speak text")
+        setTimeout(() => setError(null), 3000)
+      }
+    },
+    [synth, voiceSpeed, voicePitch, selectedVoice],
+  )
 
-  const toggleSpeech = (messageContent?: string) => {
-    if (isSpeaking) {
-      if (synth) synth.cancel()
-      setIsSpeaking(false)
-    } else {
-      // Speak the provided message or the last assistant message
-      const textToSpeak =
-        messageContent || [...messages].reverse().find((m) => m.role === "assistant")?.content || "No message to speak"
+  const toggleSpeech = useCallback(
+    (messageContent?: string) => {
+      if (isSpeaking) {
+        if (synth) synth.cancel()
+        setIsSpeaking(false)
+      } else {
+        const textToSpeak =
+          messageContent ||
+          [...messages].reverse().find((m) => m.role === "assistant")?.content ||
+          "No message to speak"
+        speakText(textToSpeak)
+      }
+    },
+    [isSpeaking, synth, messages, speakText],
+  )
 
-      speakText(textToSpeak)
-    }
-  }
-
-  const simulateTyping = (text: string, callback: () => void) => {
+  const simulateTyping = useCallback((text: string, callback: () => void) => {
     let i = 0
     setIsTyping(true)
     setTypingText("")
@@ -452,19 +450,16 @@ export default function AIAssistant() {
         setTypingText("")
         callback()
       }
-    }, 15) // Adjust speed as needed
-  }
+    }, 15)
+  }, [])
 
-  const handleVoiceCall = async () => {
-    setIsVoiceCallActive(!isVoiceCallActive)
+  const handleVoiceCall = useCallback(async () => {
+    try {
+      setIsVoiceCallActive(!isVoiceCallActive)
 
-    if (!isVoiceCallActive) {
-      // Start voice call simulation
-      try {
-        // Here you would integrate with the voice API using the provided key
+      if (!isVoiceCallActive) {
         console.log("Starting voice call with API key:", VOICE_API_KEY, "Voice ID:", VOICE_ID)
 
-        // Simulate voice call functionality
         const response = await fetch("/api/voice-call", {
           method: "POST",
           headers: {
@@ -479,69 +474,63 @@ export default function AIAssistant() {
         })
 
         if (response.ok) {
-          // Voice call started successfully
           speakText("Voice call started. How can I help you today?")
+        } else {
+          throw new Error("Failed to start voice call")
         }
-      } catch (error) {
-        console.error("Voice call error:", error)
-        setIsVoiceCallActive(false)
+      } else {
+        if (synth) synth.cancel()
+        console.log("Ending voice call")
       }
-    } else {
-      // End voice call
-      if (synth) synth.cancel()
-      console.log("Ending voice call")
+    } catch (error) {
+      console.error("Voice call error:", error)
+      setError("Voice call failed. Please try again.")
+      setTimeout(() => setError(null), 3000)
+      setIsVoiceCallActive(false)
     }
-  }
+  }, [isVoiceCallActive, speakText, synth])
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!input.trim() || isLoading) return
+  const generateResponse = useCallback(
+    (userInput: string): { response: string; category: string; isImportant: boolean } => {
+      const input = userInput.toLowerCase().trim()
 
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: input.trim(),
-      role: "user",
-      timestamp: new Date(),
-    }
+      if (input.includes("hello") || input.includes("hi") || input.includes("hey")) {
+        return {
+          response: "Hello! How can I assist you with Muhammad Uzair's portfolio today?",
+          category: "greeting",
+          isImportant: false,
+        }
+      }
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
+      if (input.includes("who are you") || input.includes("your name")) {
+        return {
+          response:
+            "I am Muhammad Uzair's Assistant, a virtual assistant designed to help you navigate through Muhammad Uzair's portfolio and answer any questions you might have about his work, skills, and experience.",
+          category: "about",
+          isImportant: false,
+        }
+      }
 
-    // Simulate AI thinking
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (input.includes("skills") || input.includes("what can you do") || input.includes("what can he do")) {
+        return {
+          response: "Muhammad Uzair has expertise in several areas including:\n\n" + knowledgeBase.skills.join("\n\n"),
+          category: "skills",
+          isImportant: false,
+        }
+      }
 
-    // Generate response based on user input
-    let response = ""
-    let category = ""
-    let isImportant = false
-    const userInput = input.toLowerCase().trim()
-
-    if (userInput.includes("hello") || userInput.includes("hi") || userInput.includes("hey")) {
-      response = "Hello! How can I assist you with Muhammad Uzair's portfolio today?"
-    } else if (userInput.includes("who are you") || userInput.includes("your name")) {
-      response =
-        "I am Muhammad Uzair's Assistant, a virtual assistant designed to help you navigate through Muhammad Uzair's portfolio and answer any questions you might have about his work, skills, and experience."
-      category = "about"
-    } else if (
-      userInput.includes("skills") ||
-      userInput.includes("what can you do") ||
-      userInput.includes("what can he do")
-    ) {
-      response = "Muhammad Uzair has expertise in several areas including:\n\n" + knowledgeBase.skills.join("\n\n")
-      category = "skills"
-    } else if (
-      userInput.includes("contact") ||
-      userInput.includes("email") ||
-      userInput.includes("reach") ||
-      userInput.includes("get in touch") ||
-      userInput.includes("phone") ||
-      userInput.includes("number") ||
-      userInput.includes("call")
-    ) {
-      response = `You can contact Muhammad Uzair via:
-      
+      if (
+        input.includes("contact") ||
+        input.includes("email") ||
+        input.includes("reach") ||
+        input.includes("get in touch") ||
+        input.includes("phone") ||
+        input.includes("number") ||
+        input.includes("call")
+      ) {
+        return {
+          response: `You can contact Muhammad Uzair via:
+        
 Email: ${knowledgeBase.contact.email}
 Phone: ${knowledgeBase.contact.phone}
 Location: ${knowledgeBase.contact.location}
@@ -549,42 +538,74 @@ LinkedIn: ${knowledgeBase.contact.linkedin}
 GitHub: ${knowledgeBase.contact.github}
 Facebook: ${knowledgeBase.contact.facebook}
 
-You can also use the contact form on this portfolio website.`
-      category = "contact"
-      isImportant = true
-    } else if (userInput.includes("project") || userInput.includes("work") || userInput.includes("portfolio")) {
-      response = "Muhammad Uzair has worked on various projects including:\n\n" + knowledgeBase.projects.join("\n\n")
-      category = "projects"
-    } else if (
-      userInput.includes("certificate") ||
-      userInput.includes("certification") ||
-      userInput.includes("qualification")
-    ) {
-      response =
-        "Muhammad Uzair has earned several professional certificates including:\n\n" +
-        knowledgeBase.certificates.join("\n\n") +
-        "\n\nYou can view any specific certificate in detail by clicking on it in the Certificates section."
-      category = "certificates"
-    } else if (userInput.includes("experience") || userInput.includes("background") || userInput.includes("history")) {
-      response = "Muhammad Uzair's professional experience includes:\n\n" + knowledgeBase.experience.join("\n\n")
-      category = "experience"
-    } else if (userInput.includes("education") || userInput.includes("study") || userInput.includes("degree")) {
-      response =
-        "Muhammad Uzair has a strong educational background in computer science and business. He continuously enhances his knowledge through professional certifications and courses. His education has provided him with a solid foundation in both technical and business domains, enabling him to approach problems from multiple perspectives."
-      category = "education"
-    } else if (
-      userInput.includes("service") ||
-      userInput.includes("offer") ||
-      userInput.includes("provide") ||
-      userInput.includes("help with")
-    ) {
-      response = "Muhammad Uzair offers the following services:\n\n" + knowledgeBase.services.join("\n\n")
-      category = "services"
-    } else if (userInput.includes("thank")) {
-      response =
-        "You're welcome! If you have any other questions about Muhammad Uzair's portfolio, skills, or experience, feel free to ask. I'm here to help!"
-    } else if (userInput.includes("hire") || userInput.includes("employ") || userInput.includes("job")) {
-      response = `If you're interested in hiring Muhammad Uzair, you can:
+You can also use the contact form on this portfolio website.`,
+          category: "contact",
+          isImportant: true,
+        }
+      }
+
+      if (input.includes("project") || input.includes("work") || input.includes("portfolio")) {
+        return {
+          response:
+            "Muhammad Uzair has worked on various projects including:\n\n" + knowledgeBase.projects.join("\n\n"),
+          category: "projects",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("certificate") || input.includes("certification") || input.includes("qualification")) {
+        return {
+          response:
+            "Muhammad Uzair has earned several professional certificates including:\n\n" +
+            knowledgeBase.certificates.join("\n\n") +
+            "\n\nYou can view any specific certificate in detail by clicking on it in the Certificates section.",
+          category: "certificates",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("experience") || input.includes("background") || input.includes("history")) {
+        return {
+          response: "Muhammad Uzair's professional experience includes:\n\n" + knowledgeBase.experience.join("\n\n"),
+          category: "experience",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("education") || input.includes("study") || input.includes("degree")) {
+        return {
+          response:
+            "Muhammad Uzair has a strong educational background in computer science and business. He continuously enhances his knowledge through professional certifications and courses. His education has provided him with a solid foundation in both technical and business domains, enabling him to approach problems from multiple perspectives.",
+          category: "education",
+          isImportant: false,
+        }
+      }
+
+      if (
+        input.includes("service") ||
+        input.includes("offer") ||
+        input.includes("provide") ||
+        input.includes("help with")
+      ) {
+        return {
+          response: "Muhammad Uzair offers the following services:\n\n" + knowledgeBase.services.join("\n\n"),
+          category: "services",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("thank")) {
+        return {
+          response:
+            "You're welcome! If you have any other questions about Muhammad Uzair's portfolio, skills, or experience, feel free to ask. I'm here to help!",
+          category: "thanks",
+          isImportant: false,
+        }
+      }
+
+      if (input.includes("hire") || input.includes("employ") || input.includes("job")) {
+        return {
+          response: `If you're interested in hiring Muhammad Uzair, you can:
 
 1. Contact him directly at ${knowledgeBase.contact.email}
 2. Call him at ${knowledgeBase.contact.phone}
@@ -592,63 +613,116 @@ You can also use the contact form on this portfolio website.`
 4. Use the contact form on this portfolio website
 5. Check out his GitHub for code samples: ${knowledgeBase.contact.github}
 
-Muhammad Uzair is available for freelance projects, contract work, and full-time positions.`
-      category = "hiring"
-      isImportant = true
-    } else if (userInput.includes("location") || userInput.includes("address") || userInput.includes("where")) {
-      response = `Muhammad Uzair is based in ${knowledgeBase.contact.location}. He is available for remote work worldwide and in-person meetings in his local area.`
-      category = "location"
-    } else if (userInput.includes("game") || userInput.includes("play") || userInput.includes("gaming")) {
-      response = "I have some exciting games available for you to play! Check out the Games section below."
-      setShowGame(true)
-      category = "games"
-    } else {
-      response =
-        "Thank you for your question. Muhammad Uzair's portfolio showcases his expertise in web development, AI technologies, and business strategy. Could you please provide more details about what specific information you're looking for? I'd be happy to help you navigate through his work, skills, certifications, or contact information."
-    }
+Muhammad Uzair is available for freelance projects, contract work, and full-time positions.`,
+          category: "hiring",
+          isImportant: true,
+        }
+      }
 
-    // Simulate typing effect for more natural interaction
-    simulateTyping(response, () => {
-      // Add assistant message after typing animation completes
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: response,
-        role: "assistant",
+      if (input.includes("location") || input.includes("address") || input.includes("where")) {
+        return {
+          response: `Muhammad Uzair is based in ${knowledgeBase.contact.location}. He is available for remote work worldwide and in-person meetings in his local area.`,
+          category: "location",
+          isImportant: false,
+        }
+      }
+
+      return {
+        response:
+          "Thank you for your question. Muhammad Uzair's portfolio showcases his expertise in web development, AI technologies, and business strategy. Could you please provide more details about what specific information you're looking for? I'd be happy to help you navigate through his work, skills, certifications, or contact information.",
+        category: "general",
+        isImportant: false,
+      }
+    },
+    [],
+  )
+
+  const handleSubmit = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) e.preventDefault()
+      if (!input.trim() || isLoading) return
+
+      const userInput = input.trim()
+      setInput("")
+      setError(null)
+
+      // Add user message
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: userInput,
+        role: "user",
         timestamp: new Date(),
-        category,
-        isImportant,
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsLoading(false)
+      setMessages((prev) => [...prev, userMessage])
+      setIsLoading(true)
 
-      // Automatically speak the response if auto-read is enabled
-      if (autoRead) {
-        speakText(response)
+      try {
+        // Simulate AI thinking
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        // Generate response
+        const { response, category, isImportant } = generateResponse(userInput)
+
+        // Simulate typing effect
+        simulateTyping(response, () => {
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            content: response,
+            role: "assistant",
+            timestamp: new Date(),
+            category,
+            isImportant,
+          }
+
+          setMessages((prev) => [...prev, assistantMessage])
+          setIsLoading(false)
+
+          // Automatically speak the response if auto-read is enabled
+          if (autoRead) {
+            speakText(response)
+          }
+        })
+      } catch (error) {
+        console.error("Error generating response:", error)
+        setError("Failed to generate response. Please try again.")
+        setIsLoading(false)
+        setTimeout(() => setError(null), 3000)
       }
-    })
-  }
+    },
+    [input, isLoading, generateResponse, simulateTyping, autoRead, speakText],
+  )
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
-  }
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault()
+        handleSubmit()
+      }
+    },
+    [handleSubmit],
+  )
 
-  const handleQuickResponse = (response: string) => {
+  const handleQuickResponse = useCallback((response: string) => {
     setInput(response)
-    // Focus the input field
     inputRef.current?.focus()
-  }
+  }, [])
 
-  const copyToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedMessageId(messageId)
-    setTimeout(() => setCopiedMessageId(null), 2000)
-  }
+  const copyToClipboard = useCallback((text: string, messageId: string) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setCopiedMessageId(messageId)
+        setTimeout(() => setCopiedMessageId(null), 2000)
+      })
+      .catch((error) => {
+        console.error("Failed to copy text:", error)
+        setError("Failed to copy text")
+        setTimeout(() => setError(null), 3000)
+      })
+  }, [])
 
-  const clearConversation = () => {
+  const clearConversation = useCallback(() => {
     setMessages([
       {
         id: "welcome",
@@ -657,59 +731,65 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
         timestamp: new Date(),
       },
     ])
-  }
+    setError(null)
+  }, [])
 
-  const saveConversation = () => {
-    const newConversationId = Date.now().toString()
-    const title = messages.find((m) => m.role === "user")?.content.slice(0, 30) + "..." || "Saved Conversation"
-    setConversationHistory((prev) => [...prev, { id: newConversationId, title, date: new Date() }])
-    // In a real app, you would save the conversation to a database or local storage
-  }
+  const saveConversation = useCallback(() => {
+    try {
+      const newConversationId = Date.now().toString()
+      const title = messages.find((m) => m.role === "user")?.content.slice(0, 30) + "..." || "Saved Conversation"
+      setConversationHistory((prev) => [...prev, { id: newConversationId, title, date: new Date() }])
+    } catch (error) {
+      console.error("Failed to save conversation:", error)
+      setError("Failed to save conversation")
+      setTimeout(() => setError(null), 3000)
+    }
+  }, [messages])
 
-  const downloadConversation = () => {
-    const conversationText = messages
-      .map((m) => `${m.role === "assistant" ? "Muhammad Uzair's Assistant" : "You"}: ${m.content}`)
-      .join("\n\n")
-    const blob = new Blob([conversationText], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "conversation-with-muhammad-uzair-assistant.txt"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  const downloadConversation = useCallback(() => {
+    try {
+      const conversationText = messages
+        .map((m) => `${m.role === "assistant" ? "Muhammad Uzair's Assistant" : "You"}: ${m.content}`)
+        .join("\n\n")
+      const blob = new Blob([conversationText], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "conversation-with-muhammad-uzair-assistant.txt"
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Failed to download conversation:", error)
+      setError("Failed to download conversation")
+      setTimeout(() => setError(null), 3000)
+    }
+  }, [messages])
 
-  const scrollToTop = () => {
+  const scrollToTop = useCallback(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTo({ top: 0, behavior: "smooth" })
     }
-  }
+  }, [])
 
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-    }
-  }
-
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (scrollAreaRef.current) {
       setScrollPosition(scrollAreaRef.current.scrollTop)
     }
-  }
+  }, [])
 
   const filteredMessages = searchQuery
     ? messages.filter(
         (m) =>
           m.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.category?.includes(searchQuery.toLowerCase()),
+          m.category?.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : messages
 
   return (
     <>
-      {/* Chat button */}
+      {/* Chat button with hover effects */}
       <motion.div
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
         initial={{ scale: 0 }}
@@ -718,11 +798,27 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       >
         <Button
           onClick={() => setIsOpen(true)}
-          className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg relative overflow-hidden group"
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg relative overflow-hidden group p-0 border-2 border-white/20"
           size="icon"
         >
-          <span className="absolute inset-0 bg-gradient-to-tr from-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-          <Bot className="h-5 w-5 sm:h-6 sm:w-6 relative z-10" />
+          <div
+            className={`absolute inset-0 transition-all duration-300 ${
+              isButtonHovered ? "brightness-75 scale-105" : "brightness-100 scale-100"
+            }`}
+          >
+            <img
+              src="/images/uzair-chatbot.jpg"
+              alt="Muhammad Uzair Assistant"
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
+          <div
+            className={`absolute inset-0 bg-black/20 rounded-full transition-opacity duration-300 ${
+              isButtonHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
         </Button>
       </motion.div>
 
@@ -732,8 +828,8 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
           <motion.div
             className={`fixed z-50 ${
               isExpanded
-                ? "inset-2 sm:inset-4"
-                : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[380px] sm:w-[380px] h-[calc(100vh-80px)] max-h-[600px] sm:h-[600px]"
+                ? "inset-2 sm:inset-4 md:inset-6 lg:inset-8"
+                : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[90vw] sm:max-w-[400px] md:max-w-[420px] lg:max-w-[450px] h-[calc(100vh-100px)] max-h-[80vh] sm:max-h-[600px] md:max-h-[650px] lg:max-h-[700px]"
             }`}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -743,11 +839,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
             onMouseLeave={() => setIsHovering(false)}
             ref={chatContainerRef}
           >
-            <Card className={`shadow-xl border-primary/20 overflow-hidden h-full w-full flex flex-col`}>
+            <Card className="shadow-xl border-primary/20 overflow-hidden h-full w-full flex flex-col bg-background/95 backdrop-blur-sm">
               <CardHeader className="p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/20 flex-shrink-0">
-                    <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
+                    <AvatarImage src="/images/uzair-chatbot.jpg" alt="Muhammad Uzair" className="object-cover" />
                     <AvatarFallback className="bg-primary-foreground text-primary text-xs sm:text-sm">
                       MU
                     </AvatarFallback>
@@ -864,10 +960,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
-                          onClick={() => {
-                            setIsOpen(false)
-                            setShowGame(false)
-                          }}
+                          onClick={() => setIsOpen(false)}
                         >
                           <X className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -880,15 +973,19 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                 </div>
               </CardHeader>
 
+              {/* Error Alert */}
+              {error && (
+                <Alert className="m-2 border-destructive/50 text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
                 <TabsList className="w-full justify-start px-2 sm:px-4 pt-2 bg-background flex-shrink-0">
                   <TabsTrigger value="chat" className="flex items-center gap-1 text-xs sm:text-sm">
                     <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Chat</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="games" className="flex items-center gap-1 text-xs sm:text-sm">
-                    <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Games</span>
                   </TabsTrigger>
                   <TabsTrigger value="history" className="flex items-center gap-1 text-xs sm:text-sm">
                     <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -960,7 +1057,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                               <div className="flex items-center gap-2 mb-1">
                                 {message.role === "assistant" ? (
                                   <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                    <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
+                                    <AvatarImage
+                                      src="/images/uzair-chatbot.jpg"
+                                      alt="Muhammad Uzair"
+                                      className="object-cover"
+                                    />
                                     <AvatarFallback className="text-xs">MU</AvatarFallback>
                                   </Avatar>
                                 ) : (
@@ -1044,7 +1145,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
                                 <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                  <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
+                                  <AvatarImage
+                                    src="/images/uzair-chatbot.jpg"
+                                    alt="Muhammad Uzair"
+                                    className="object-cover"
+                                  />
                                   <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
                                 <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
@@ -1063,7 +1168,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
                                 <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                  <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
+                                  <AvatarImage
+                                    src="/images/uzair-chatbot.jpg"
+                                    alt="Muhammad Uzair"
+                                    className="object-cover"
+                                  />
                                   <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
                                 <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
@@ -1116,6 +1225,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         onKeyDown={handleKeyDown}
                         placeholder="Type your message..."
                         className="min-h-8 sm:min-h-10 flex-1 resize-none text-xs sm:text-sm"
+                        disabled={isLoading}
                       />
                       <div className="flex flex-col gap-1 sm:gap-2">
                         {speechSupported && (
@@ -1128,6 +1238,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                                   size="icon"
                                   onClick={toggleListening}
                                   className={`h-8 w-8 sm:h-10 sm:w-10 ${isListening ? "bg-red-100 dark:bg-red-900/30" : ""}`}
+                                  disabled={isLoading}
                                 >
                                   {isListening ? (
                                     <MicOff className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1257,59 +1368,6 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   </CardFooter>
                 </TabsContent>
 
-                <TabsContent value="games" className="flex-1 flex flex-col p-0 m-0 min-h-0">
-                  {!showGame ? (
-                    <div className="flex-1 flex items-center justify-center p-8">
-                      <div className="text-center space-y-4">
-                        <Gamepad2 className="h-16 w-16 mx-auto text-muted-foreground" />
-                        <h3 className="text-lg font-medium">Games Available</h3>
-                        <p className="text-muted-foreground">Ask me about games to see available options!</p>
-                        <Button onClick={() => setShowGame(true)}>Show Games</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col min-h-0">
-                      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-muted/30 flex-shrink-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl sm:text-2xl">🎯</span>
-                          <span className="font-medium text-sm sm:text-base">Deadshot.io</span>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 sm:h-8 sm:w-8"
-                            onClick={() => window.open("https://deadshot.io/", "_blank")}
-                          >
-                            <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 sm:h-8 sm:w-8"
-                            onClick={() => setShowGame(false)}
-                          >
-                            <X className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex-1 relative min-h-0">
-                        <iframe
-                          ref={gameIframeRef}
-                          src="https://deadshot.io/"
-                          className="w-full h-full border-0"
-                          title="Deadshot.io Game"
-                          allow="fullscreen; gamepad; microphone; camera; pointer-lock"
-                          style={{
-                            minHeight: "300px",
-                            cursor: showGame ? "none" : "default",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-
                 <TabsContent value="history" className="flex-1 p-0 m-0 min-h-0">
                   <ScrollArea className="h-full p-4">
                     <div className="space-y-4">
@@ -1317,68 +1375,19 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       {conversationHistory.map((conversation) => (
                         <div
                           key={conversation.id}
-                          className="p-3 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
                         >
-                          <div className="flex justify-between items-start">
+                          <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-medium text-sm">{conversation.title}</h4>
-                              <p className="text-xs text-muted-foreground">
-                                {conversation.date.toLocaleDateString()} at{" "}
-                                {conversation.date.toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                })}
-                              </p>
+                              <p className="font-medium text-sm">{conversation.title}</p>
+                              <p className="text-xs text-muted-foreground">{conversation.date.toLocaleDateString()}</p>
                             </div>
                             <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <ChevronDown className="h-4 w-4" />
+                              <ChevronDown className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
                       ))}
-
-                      <div className="pt-4">
-                        <h3 className="font-medium text-sm text-muted-foreground">Suggested Topics</h3>
-                        <div className="grid grid-cols-1 gap-2 mt-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="justify-start"
-                            onClick={() => {
-                              setActiveTab("chat")
-                              handleQuickResponse("Tell me about your skills")
-                            }}
-                          >
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Skills & Expertise
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="justify-start"
-                            onClick={() => {
-                              setActiveTab("chat")
-                              handleQuickResponse("What projects have you worked on?")
-                            }}
-                          >
-                            <Zap className="h-4 w-4 mr-2" />
-                            Portfolio Projects
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="justify-start"
-                            onClick={() => {
-                              setActiveTab("chat")
-                              handleQuickResponse("How can I contact you?")
-                            }}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Contact Information
-                          </Button>
-                        </div>
-                      </div>
                     </div>
                   </ScrollArea>
                 </TabsContent>
