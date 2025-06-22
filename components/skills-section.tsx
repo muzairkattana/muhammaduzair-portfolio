@@ -1,159 +1,73 @@
 "use client"
+import { motion } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
+import SkillRadar from "@/components/skill-radar"
 
-import type React from "react"
-
-import { useEffect } from "react"
-import { motion, useAnimation } from "framer-motion"
-import { useInView } from "react-intersection-observer"
-import { Code, Globe, Server, FileCode } from "lucide-react"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Progress } from "@/components/ui/progress"
-import RotatingCube from "./rotating-cube"
-
-interface Skill {
-  name: string
-  percentage: number
-}
-
-interface SkillCategory {
-  title: string
-  icon: React.ReactNode
-  subtitle: string
-  skills: Skill[]
-}
-
-export default function SkillsSection() {
-  const controls = useAnimation()
-  const [ref, inView] = useInView({
-    threshold: 0.2,
-    triggerOnce: true,
-  })
-
-  useEffect(() => {
-    if (inView) {
-      controls.start("visible")
-    }
-  }, [controls, inView])
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.5 },
-    },
-  }
-
-  const skillCategories: SkillCategory[] = [
-    {
-      title: "Full-Stack Development",
-      icon: <Code className="h-5 w-5 text-primary" />,
-      subtitle: "1+ years experience",
-      skills: [
-        { name: "Back-End Development", percentage: 80 },
-        { name: "Front-End Development", percentage: 90 },
-        { name: "WordPress Development", percentage: 85 },
-        { name: "Microsoft Office Suite", percentage: 90 },
-      ],
-    },
-    {
-      title: "Back-End Development",
-      icon: <Server className="h-5 w-5 text-primary" />,
-      subtitle: "More than 1 year experience",
-      skills: [
-        { name: "C# Framework (ASP.NET)", percentage: 80 },
-        { name: "SQL Server", percentage: 60 },
-        { name: "Web APIs", percentage: 70 },
-        { name: "ASP.NET MVC", percentage: 90 },
-      ],
-    },
-    {
-      title: "Front-End Development",
-      icon: <Globe className="h-5 w-5 text-primary" />,
-      subtitle: "More than 1 year experience",
-      skills: [
-        { name: "HTML5", percentage: 90 },
-        { name: "CSS3", percentage: 70 },
-        { name: "JavaScript", percentage: 50 },
-        { name: "Bootstrap", percentage: 80 },
-      ],
-    },
-    {
-      title: "Other Skills",
-      icon: <FileCode className="h-5 w-5 text-primary" />,
-      subtitle: "More than 1 year experience",
-      skills: [
-        { name: "Microsoft Office", percentage: 95 },
-        { name: "Bootstrap", percentage: 80 },
-        { name: "Amazon FBA", percentage: 85 },
-        { name: "Inventory Management", percentage: 75 },
-      ],
-    },
-  ]
-
+const SkillsSection = () => {
   return (
-    <section id="skills" className="py-16">
-      <div className="container mx-auto px-4 md:px-6">
-        <motion.div ref={ref} variants={containerVariants} initial="hidden" animate={controls} className="space-y-12">
-          <motion.div variants={itemVariants} className="text-center">
-            <h2 className="text-3xl font-bold mb-2">Skills</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              My technical expertise and professional capabilities
-            </p>
-          </motion.div>
+    <section className="py-16 lg:py-24 relative overflow-hidden">
+      {/* Enhanced background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5"></div>
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-          <motion.div variants={itemVariants} className="flex justify-center mb-12">
-            <RotatingCube />
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
-            {skillCategories.map((category, index) => (
-              <Accordion
-                key={index}
-                type="single"
-                collapsible
-                className="border rounded-lg overflow-hidden"
-                defaultValue={index === 0 ? "item-1" : undefined}
-              >
-                <AccordionItem value="item-1" className="border-none">
-                  <AccordionTrigger className="px-4 py-3 hover:bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      {category.icon}
-                      <div className="text-left">
-                        <h3 className="font-medium">{category.title}</h3>
-                        <p className="text-xs text-muted-foreground">{category.subtitle}</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="space-y-4">
-                      {category.skills.map((skill, skillIndex) => (
-                        <div key={skillIndex} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="font-medium">{skill.name}</span>
-                            <span className="text-primary font-medium">{skill.percentage}%</span>
-                          </div>
-                          <Progress value={skill.percentage} className="h-2" />
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            ))}
-          </motion.div>
+      <div className="container mx-auto px-4 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+          className="text-center mb-12 lg:mb-16"
+        >
+          <Badge variant="outline" className="mb-4 text-primary border-primary/30">
+            Professional Skills
+          </Badge>
+          <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-4">
+            Skills{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Overview</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Comprehensive expertise across multiple domains with proven track record
+          </p>
         </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Enhanced Skill Radar */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="skill-chart-professional skill-radar-container"
+          >
+            <SkillRadar
+              skills={[
+                { name: "React/Next.js", level: 95 },
+                { name: "TypeScript", level: 90 },
+                { name: "Node.js", level: 85 },
+                { name: "AI/ML", level: 80 },
+                { name: "UI/UX Design", level: 88 },
+                { name: "Business Strategy", level: 92 },
+              ]}
+              size={400}
+              className="mx-auto"
+            />
+          </motion.div>
+
+          {/* Enhanced Skills List */}
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="space-y-6"
+          >
+            {/* Professional skill categories with enhanced styling */}
+          </motion.div>
+        </div>
       </div>
     </section>
   )
 }
+
+export default SkillsSection

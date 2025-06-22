@@ -229,6 +229,9 @@ export default function AIAssistant() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
   const [selectedGame, setSelectedGame] = useState<{ name: string; url: string; icon: string } | null>(null)
+  // Add embedded game interface state
+  const [embeddedGameUrl, setEmbeddedGameUrl] = useState<string | null>(null)
+  const [isGameLoading, setIsGameLoading] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -843,6 +846,26 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       )
     : messages
 
+  // Update the games click handler to embed games in chatbot
+  const handleGameClick = (game: { name: string; url: string; icon: string }) => {
+    setIsGameLoading(true)
+    setEmbeddedGameUrl(game.url)
+    setSelectedGame(game)
+
+    // Add message about opening game
+    const gameMessage: Message = {
+      id: Date.now().toString(),
+      content: `Opening ${game.name} in embedded view...`,
+      role: "assistant",
+      timestamp: new Date(),
+      category: "games",
+      isImportant: false,
+    }
+    setMessages((prev) => [...prev, gameMessage])
+
+    setTimeout(() => setIsGameLoading(false), 2000)
+  }
+
   return (
     <>
       {/* Chat button with hover effects */}
@@ -1451,7 +1474,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             key={index}
                             variant="outline"
                             className="justify-start h-auto p-3 hover:bg-primary/5"
-                            onClick={() => setSelectedGame(game)}
+                            onClick={() => handleGameClick(game)}
                           >
                             <span className="text-lg mr-3">{game.icon}</span>
                             <div className="text-left">
@@ -1475,7 +1498,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             key={index}
                             variant="outline"
                             className="justify-start h-auto p-3 hover:bg-primary/5"
-                            onClick={() => setSelectedGame(game)}
+                            onClick={() => handleGameClick(game)}
                           >
                             <span className="text-lg mr-3">{game.icon}</span>
                             <div className="text-left">
@@ -1504,6 +1527,45 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Learn More
                           </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Embedded Game Viewer */}
+                    {embeddedGameUrl && (
+                      <div className="border rounded-lg overflow-hidden bg-background">
+                        <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{selectedGame?.icon}</span>
+                            <h5 className="font-semibold text-sm">{selectedGame?.name}</h5>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              setEmbeddedGameUrl(null)
+                              setSelectedGame(null)
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="relative h-64 sm:h-80">
+                          {isGameLoading ? (
+                            <div className="flex items-center justify-center h-full">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                              <span className="ml-2 text-sm">Loading game...</span>
+                            </div>
+                          ) : (
+                            <iframe
+                              src={embeddedGameUrl}
+                              className="w-full h-full border-0"
+                              title={selectedGame?.name}
+                              allowFullScreen
+                              sandbox="allow-scripts allow-same-origin allow-forms"
+                            />
+                          )}
                         </div>
                       </div>
                     )}

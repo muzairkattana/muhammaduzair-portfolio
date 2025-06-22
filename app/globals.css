@@ -132,6 +132,39 @@
   --border: 0 0% 100%;
 }
 
+/* Sky Blue Theme */
+.skyblue-theme {
+  /* Sky blue theme colors */
+  --hue-color: 200; /* Sky blue hue */
+  --title-color: hsl(var(--hue-color), 15%, 15%);
+  --text-color: hsl(var(--hue-color), 8%, 45%);
+  --body-color: hsl(var(--hue-color), 60%, 97%);
+  --container-color: hsl(var(--hue-color), 40%, 95%);
+  --scroll-bar-color: hsl(var(--hue-color), 22%, 90%);
+  --scroll-thumb-color: hsl(var(--hue-color), 12%, 80%);
+
+  /* Shadcn UI sky blue colors */
+  --background: var(--hue-color) 60% 97%;
+  --foreground: var(--hue-color) 15% 15%;
+  --card: var(--hue-color) 40% 95%;
+  --card-foreground: var(--hue-color) 15% 15%;
+  --popover: var(--hue-color) 40% 95%;
+  --popover-foreground: var(--hue-color) 15% 15%;
+  --primary: var(--hue-color) 69% 61%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: var(--hue-color) 40% 90%;
+  --secondary-foreground: var(--hue-color) 15% 15%;
+  --muted: var(--hue-color) 40% 90%;
+  --muted-foreground: var(--hue-color) 16.3% 46.9%;
+  --accent: var(--hue-color) 40% 90%;
+  --accent-foreground: var(--hue-color) 15% 15%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: var(--hue-color) 31.8% 85%;
+  --input: var(--hue-color) 31.8% 85%;
+  --ring: var(--hue-color) 69% 61%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -359,6 +392,21 @@ html {
     max-width: 100%;
     height: auto;
   }
+
+  .mobile-profile-top {
+    order: -1;
+    margin-bottom: 2rem;
+  }
+
+  .mobile-text-center {
+    text-align: center;
+  }
+
+  .mobile-profile-large {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+  }
 }
 
 /* Optimize animations */
@@ -421,5 +469,82 @@ html {
 
   .scrollbar-track-transparent::-webkit-scrollbar-track {
     background-color: transparent;
+  }
+}
+
+/* Enhanced skill radar animations */
+.skill-radar-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-radar-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent
+  );
+  animation: rotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Fullscreen enhancements */
+:fullscreen {
+  background: var(--body-color);
+}
+
+:-webkit-full-screen {
+  background: var(--body-color);
+}
+
+:-moz-full-screen {
+  background: var(--body-color);
+}
+
+/* Professional skill chart enhancements */
+.skill-chart-professional {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-chart-professional::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(59, 130, 246, 0.05) 50%, transparent 70%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
   }
 }

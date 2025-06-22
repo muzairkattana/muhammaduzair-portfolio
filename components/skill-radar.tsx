@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import type React from "react"
+
+import { useEffect, useRef, useState, useCallback } from "react"
 import { motion } from "framer-motion"
 
 interface Skill {
@@ -17,6 +19,18 @@ interface SkillRadarProps {
 export default function SkillRadar({ skills, size = 300, className = "" }: SkillRadarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Add more professional styling and animations
+  const [animationProgress, setAnimationProgress] = useState(0)
+  const [hoveredSkill, setHoveredSkill] = useState<number | null>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimationProgress(1)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Enhanced drawing with professional styling
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -24,7 +38,7 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Set canvas size with higher resolution for retina displays
+    // Set canvas size with higher resolution
     const pixelRatio = window.devicePixelRatio || 1
     canvas.width = size * pixelRatio
     canvas.height = size * pixelRatio
@@ -32,84 +46,192 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
     canvas.style.height = `${size}px`
     ctx.scale(pixelRatio, pixelRatio)
 
-    // Get primary color from CSS variables
-    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim()
+    // Clear canvas
+    ctx.clearRect(0, 0, size, size)
 
     const centerX = size / 2
     const centerY = size / 2
-    const radius = size * 0.4
+    const radius = size * 0.35
 
-    // Draw background circles
+    // Professional gradient background
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+    bgGradient.addColorStop(0, "rgba(59, 130, 246, 0.05)")
+    bgGradient.addColorStop(1, "rgba(59, 130, 246, 0.02)")
+
+    ctx.fillStyle = bgGradient
+    ctx.beginPath()
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Enhanced grid lines with glow effect
     const levels = 5
-    ctx.strokeStyle = "rgba(200, 200, 200, 0.2)"
-
     for (let i = 1; i <= levels; i++) {
       const levelRadius = (radius / levels) * i
+
+      // Glow effect
+      ctx.shadowColor = "rgba(59, 130, 246, 0.3)"
+      ctx.shadowBlur = 2
+      ctx.strokeStyle = `rgba(59, 130, 246, ${0.1 + i * 0.05})`
+      ctx.lineWidth = i === levels ? 2 : 1
+
       ctx.beginPath()
       ctx.arc(centerX, centerY, levelRadius, 0, Math.PI * 2)
       ctx.stroke()
+
+      ctx.shadowBlur = 0
     }
 
-    // Calculate points for each skill
+    // Animated skill axes with glow
     const angleStep = (Math.PI * 2) / skills.length
+    skills.forEach((_, i) => {
+      const angle = i * angleStep - Math.PI / 2
+
+      ctx.shadowColor = "rgba(59, 130, 246, 0.4)"
+      ctx.shadowBlur = 1
+      ctx.strokeStyle = hoveredSkill === i ? "rgba(59, 130, 246, 0.8)" : "rgba(59, 130, 246, 0.3)"
+      ctx.lineWidth = hoveredSkill === i ? 2 : 1
+
+      ctx.beginPath()
+      ctx.moveTo(centerX, centerY)
+      ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius)
+      ctx.stroke()
+
+      ctx.shadowBlur = 0
+    })
+
+    // Animated skill points with progress
     const points = skills.map((skill, i) => {
-      const angle = i * angleStep - Math.PI / 2 // Start from top
-      const distance = (skill.level / 100) * radius
+      const angle = i * angleStep - Math.PI / 2
+      const distance = (skill.level / 100) * radius * animationProgress
       return {
         x: centerX + Math.cos(angle) * distance,
         y: centerY + Math.sin(angle) * distance,
         name: skill.name,
         level: skill.level,
+        angle: angle,
       }
     })
 
-    // Draw skill axes
-    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)"
-    skills.forEach((_, i) => {
-      const angle = i * angleStep - Math.PI / 2
+    // Professional skill area with gradient
+    if (animationProgress > 0) {
+      const areaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+      areaGradient.addColorStop(0, "rgba(59, 130, 246, 0.3)")
+      areaGradient.addColorStop(1, "rgba(59, 130, 246, 0.1)")
+
       ctx.beginPath()
-      ctx.moveTo(centerX, centerY)
-      ctx.lineTo(centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius)
+      points.forEach((point, i) => {
+        if (i === 0) {
+          ctx.moveTo(point.x, point.y)
+        } else {
+          ctx.lineTo(point.x, point.y)
+        }
+      })
+      ctx.closePath()
+
+      ctx.fillStyle = areaGradient
+      ctx.fill()
+
+      // Enhanced border with glow
+      ctx.shadowColor = "rgba(59, 130, 246, 0.6)"
+      ctx.shadowBlur = 4
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.8)"
+      ctx.lineWidth = 2
       ctx.stroke()
+      ctx.shadowBlur = 0
+    }
+
+    // Enhanced skill points with animation
+    points.forEach((point, i) => {
+      const isHovered = hoveredSkill === i
+      const pointSize = isHovered ? 6 : 4
+
+      // Glow effect for points
+      ctx.shadowColor = "rgba(59, 130, 246, 0.8)"
+      ctx.shadowBlur = isHovered ? 8 : 4
+
+      ctx.beginPath()
+      ctx.arc(point.x, point.y, pointSize, 0, Math.PI * 2)
+      ctx.fillStyle = isHovered ? "rgba(59, 130, 246, 1)" : "rgba(59, 130, 246, 0.9)"
+      ctx.fill()
+
+      // Inner highlight
+      ctx.beginPath()
+      ctx.arc(point.x, point.y, pointSize - 1, 0, Math.PI * 2)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
+      ctx.fill()
+
+      ctx.shadowBlur = 0
     })
 
-    // Draw skill labels
-    ctx.fillStyle = "#888"
-    ctx.font = "12px sans-serif"
+    // Enhanced skill labels with better positioning
+    ctx.fillStyle = "hsl(var(--foreground))"
+    ctx.font = "bold 12px system-ui"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
 
     skills.forEach((skill, i) => {
       const angle = i * angleStep - Math.PI / 2
-      const labelX = centerX + Math.cos(angle) * (radius + 20)
-      const labelY = centerY + Math.sin(angle) * (radius + 20)
+      const labelDistance = radius + 25
+      const labelX = centerX + Math.cos(angle) * labelDistance
+      const labelY = centerY + Math.sin(angle) * labelDistance
+
+      // Background for labels
+      const textWidth = ctx.measureText(skill.name).width
+      ctx.fillStyle = "rgba(59, 130, 246, 0.1)"
+      ctx.fillRect(labelX - textWidth / 2 - 4, labelY - 8, textWidth + 8, 16)
+
+      ctx.fillStyle = hoveredSkill === i ? "rgba(59, 130, 246, 1)" : "hsl(var(--foreground))"
       ctx.fillText(skill.name, labelX, labelY)
-    })
 
-    // Draw skill area
-    ctx.beginPath()
-    points.forEach((point, i) => {
-      if (i === 0) {
-        ctx.moveTo(point.x, point.y)
-      } else {
-        ctx.lineTo(point.x, point.y)
-      }
+      // Skill percentage
+      ctx.font = "10px system-ui"
+      ctx.fillStyle = "hsl(var(--muted-foreground))"
+      ctx.fillText(`${skill.level}%`, labelX, labelY + 12)
+      ctx.font = "bold 12px system-ui"
     })
-    ctx.closePath()
-    ctx.fillStyle = `hsla(${primaryColor}, 0.2)`
-    ctx.fill()
-    ctx.strokeStyle = `hsla(${primaryColor}, 0.8)`
-    ctx.lineWidth = 2
-    ctx.stroke()
+  }, [skills, size, animationProgress, hoveredSkill])
 
-    // Draw skill points
-    points.forEach((point) => {
-      ctx.beginPath()
-      ctx.arc(point.x, point.y, 4, 0, Math.PI * 2)
-      ctx.fillStyle = `hsla(${primaryColor}, 1)`
-      ctx.fill()
-    })
-  }, [skills, size])
+  // Add mouse interaction
+  const handleMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+
+      const rect = canvas.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+
+      const centerX = size / 2
+      const centerY = size / 2
+      const radius = size * 0.35
+
+      // Check if mouse is near any skill point
+      const angleStep = (Math.PI * 2) / skills.length
+      let nearestSkill = null
+      let minDistance = Number.POSITIVE_INFINITY
+
+      skills.forEach((skill, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const distance = (skill.level / 100) * radius
+        const pointX = centerX + Math.cos(angle) * distance
+        const pointY = centerY + Math.sin(angle) * distance
+
+        const dist = Math.sqrt((x - pointX) ** 2 + (y - pointY) ** 2)
+        if (dist < 20 && dist < minDistance) {
+          minDistance = dist
+          nearestSkill = i
+        }
+      })
+
+      setHoveredSkill(nearestSkill)
+    },
+    [skills, size],
+  )
+
+  // Add mouse leave handler
+  const handleMouseLeave = useCallback(() => {
+    setHoveredSkill(null)
+  }, [])
 
   return (
     <motion.div
@@ -119,7 +241,14 @@ export default function SkillRadar({ skills, size = 300, className = "" }: Skill
       transition={{ duration: 0.5 }}
       viewport={{ once: true }}
     >
-      <canvas ref={canvasRef} width={size} height={size} className="max-w-full" />
+      <canvas
+        ref={canvasRef}
+        width={size}
+        height={size}
+        className="max-w-full cursor-pointer"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
     </motion.div>
   )
 }
