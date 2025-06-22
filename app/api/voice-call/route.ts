@@ -3,10 +3,10 @@ import { type NextRequest, NextResponse } from "next/server"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, user_id } = body
+    const { action, user_id, voice_id } = body
 
     // Simulate voice call API integration
-    console.log("Voice call API called with:", { action, user_id })
+    console.log("Voice call API called with:", { action, user_id, voice_id })
 
     if (action === "start_call") {
       return NextResponse.json({
@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
         message: "Voice call started successfully",
         call_id: `call_${Date.now()}`,
         status: "active",
+        voice_id: voice_id || "RTFg9niKcgGLDwa3RFlz",
       })
     }
 

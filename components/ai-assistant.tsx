@@ -32,8 +32,6 @@ import {
   Loader2,
   Gamepad2,
   ExternalLink,
-  Maximize,
-  Minimize,
   Phone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -96,6 +94,7 @@ interface SpeechRecognition extends EventTarget {
 
 // Voice API configuration
 const VOICE_API_KEY = "sk_b9009a7d8232caabcae2625fa68ac5765b986c450cc5ca98"
+const VOICE_ID = "RTFg9niKcgGLDwa3RFlz"
 
 // Predefined quick responses
 const quickResponses = [
@@ -199,8 +198,6 @@ export default function AIAssistant() {
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null)
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
   const [showGame, setShowGame] = useState(false)
-  const [gameExpanded, setGameExpanded] = useState(false)
-  const [activeGameTab, setActiveGameTab] = useState("deadshot")
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -211,6 +208,7 @@ export default function AIAssistant() {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const gameIframeRef = useRef<HTMLIFrameElement>(null)
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -221,7 +219,7 @@ export default function AIAssistant() {
 
   // Auto-close when cursor is removed
   useEffect(() => {
-    if (autoClose && !isHovering && isOpen && !gameExpanded) {
+    if (autoClose && !isHovering && isOpen && !showGame) {
       autoCloseTimeoutRef.current = setTimeout(() => {
         setIsOpen(false)
       }, 5000) // 5 seconds delay before closing
@@ -232,7 +230,7 @@ export default function AIAssistant() {
         clearTimeout(autoCloseTimeoutRef.current)
       }
     }
-  }, [isHovering, autoClose, isOpen, gameExpanded])
+  }, [isHovering, autoClose, isOpen, showGame])
 
   // Check if scroll buttons should be shown
   useEffect(() => {
@@ -307,8 +305,10 @@ export default function AIAssistant() {
           const voices = synth.getVoices()
           setAvailableVoices(voices)
 
-          // Set default voice (preferably English)
+          // Set voice with specific ID or default voice
+          const specificVoice = voices.find((voice) => voice.voiceURI === VOICE_ID)
           const defaultVoice =
+            specificVoice ||
             voices.find((voice) => voice.lang.includes("en") && voice.name.includes("Female")) ||
             voices.find((voice) => voice.lang.includes("en")) ||
             voices[0]
@@ -340,6 +340,32 @@ export default function AIAssistant() {
       }
     }
   }, [])
+
+  // Handle game iframe pointer lock
+  useEffect(() => {
+    const handleGameFocus = () => {
+      if (gameIframeRef.current && showGame) {
+        // Request pointer lock when game is focused
+        gameIframeRef.current.requestPointerLock =
+          gameIframeRef.current.requestPointerLock ||
+          (gameIframeRef.current as any).mozRequestPointerLock ||
+          (gameIframeRef.current as any).webkitRequestPointerLock
+
+        if (gameIframeRef.current.requestPointerLock) {
+          gameIframeRef.current.requestPointerLock()
+        }
+      }
+    }
+
+    if (showGame && gameIframeRef.current) {
+      gameIframeRef.current.addEventListener("click", handleGameFocus)
+      return () => {
+        if (gameIframeRef.current) {
+          gameIframeRef.current.removeEventListener("click", handleGameFocus)
+        }
+      }
+    }
+  }, [showGame])
 
   const toggleListening = () => {
     if (!recognitionRef.current || !speechSupported) return
@@ -436,7 +462,7 @@ export default function AIAssistant() {
       // Start voice call simulation
       try {
         // Here you would integrate with the voice API using the provided key
-        console.log("Starting voice call with API key:", VOICE_API_KEY)
+        console.log("Starting voice call with API key:", VOICE_API_KEY, "Voice ID:", VOICE_ID)
 
         // Simulate voice call functionality
         const response = await fetch("/api/voice-call", {
@@ -448,6 +474,7 @@ export default function AIAssistant() {
           body: JSON.stringify({
             action: "start_call",
             user_id: "user_123",
+            voice_id: VOICE_ID,
           }),
         })
 
@@ -684,18 +711,18 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
     <>
       {/* Chat button */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 1 }}
       >
         <Button
           onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full shadow-lg relative overflow-hidden group"
+          className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg relative overflow-hidden group"
           size="icon"
         >
           <span className="absolute inset-0 bg-gradient-to-tr from-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-          <Bot className="h-6 w-6 relative z-10" />
+          <Bot className="h-5 w-5 sm:h-6 sm:w-6 relative z-10" />
         </Button>
       </motion.div>
 
@@ -703,7 +730,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className={`fixed z-50 ${gameExpanded ? "inset-4" : isExpanded ? "inset-4" : "bottom-6 right-6"}`}
+            className={`fixed z-50 ${
+              isExpanded
+                ? "inset-2 sm:inset-4"
+                : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[380px] sm:w-[380px] h-[calc(100vh-80px)] max-h-[600px] sm:h-[600px]"
+            }`}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -712,17 +743,11 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
             onMouseLeave={() => setIsHovering(false)}
             ref={chatContainerRef}
           >
-            <Card
-              className={`shadow-xl border-primary/20 overflow-hidden ${
-                gameExpanded || isExpanded ? "h-full w-full" : "w-[90vw] max-w-[380px] h-[600px] sm:w-[380px]"
-              }`}
-            >
-              <CardHeader
-                className={`p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 ${gameExpanded ? "min-h-[60px]" : ""}`}
-              >
+            <Card className={`shadow-xl border-primary/20 overflow-hidden h-full w-full flex flex-col`}>
+              <CardHeader className="p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/20 flex-shrink-0">
-                    <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                    <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
                     <AvatarFallback className="bg-primary-foreground text-primary text-xs sm:text-sm">
                       MU
                     </AvatarFallback>
@@ -818,15 +843,9 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
-                          onClick={() => {
-                            if (gameExpanded) {
-                              setGameExpanded(false)
-                            } else {
-                              setIsExpanded(!isExpanded)
-                            }
-                          }}
+                          onClick={() => setIsExpanded(!isExpanded)}
                         >
-                          {isExpanded || gameExpanded ? (
+                          {isExpanded ? (
                             <Minimize2 className="h-3 w-3 sm:h-4 sm:w-4" />
                           ) : (
                             <Maximize2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -834,7 +853,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{isExpanded || gameExpanded ? "Minimize" : "Maximize"}</p>
+                        <p>{isExpanded ? "Minimize" : "Maximize"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -847,7 +866,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           className="h-7 w-7 sm:h-8 sm:w-8 text-white hover:bg-white/10"
                           onClick={() => {
                             setIsOpen(false)
-                            setGameExpanded(false)
+                            setShowGame(false)
                           }}
                         >
                           <X className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -861,14 +880,8 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                 </div>
               </CardHeader>
 
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className={`flex flex-col ${
-                  gameExpanded || isExpanded ? "h-[calc(100%-60px)]" : "h-[calc(600px-64px)]"
-                }`}
-              >
-                <TabsList className="w-full justify-start px-2 sm:px-4 pt-2 bg-background">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+                <TabsList className="w-full justify-start px-2 sm:px-4 pt-2 bg-background flex-shrink-0">
                   <TabsTrigger value="chat" className="flex items-center gap-1 text-xs sm:text-sm">
                     <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Chat</span>
@@ -883,8 +896,8 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-                  <div className="p-2 sm:p-4 border-b flex items-center gap-2">
+                <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 min-h-0">
+                  <div className="p-2 sm:p-4 border-b flex items-center gap-2 flex-shrink-0">
                     <Search className="h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search in conversation..."
@@ -899,7 +912,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                     )}
                   </div>
 
-                  <div className="relative flex-1">
+                  <div className="relative flex-1 min-h-0">
                     {/* Scroll buttons */}
                     <Button
                       onClick={scrollToTop}
@@ -928,7 +941,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       <ChevronDown className="h-4 w-4" />
                     </Button>
 
-                    <ScrollArea className="flex-1 p-2 sm:p-4" ref={scrollAreaRef as any} onScroll={handleScroll}>
+                    <ScrollArea className="flex-1 p-2 sm:p-4 h-full" ref={scrollAreaRef as any} onScroll={handleScroll}>
                       <div className="space-y-4">
                         {filteredMessages.map((message) => (
                           <div
@@ -947,7 +960,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                               <div className="flex items-center gap-2 mb-1">
                                 {message.role === "assistant" ? (
                                   <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                    <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                    <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
                                     <AvatarFallback className="text-xs">MU</AvatarFallback>
                                   </Avatar>
                                 ) : (
@@ -1031,7 +1044,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
                                 <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                  <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                  <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
                                   <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
                                 <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
@@ -1050,7 +1063,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                             <div className="max-w-[85%] rounded-lg p-3 bg-muted">
                               <div className="flex items-center gap-2 mb-1">
                                 <Avatar className="h-5 w-5 sm:h-6 sm:w-6">
-                                  <AvatarImage src="/images/uzair-profile.jpg" alt="Muhammad Uzair" />
+                                  <AvatarImage src="/images/uzair-logo.jpg" alt="Muhammad Uzair" />
                                   <AvatarFallback className="text-xs">MU</AvatarFallback>
                                 </Avatar>
                                 <span className="text-[10px] sm:text-xs opacity-70">Muhammad Uzair's Assistant</span>
@@ -1078,7 +1091,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   </div>
 
                   {/* Quick responses */}
-                  <div className="px-2 sm:px-4 py-2 border-t">
+                  <div className="px-2 sm:px-4 py-2 border-t flex-shrink-0">
                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
                       {quickResponses.map((response) => (
                         <Button
@@ -1094,7 +1107,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                     </div>
                   </div>
 
-                  <CardFooter className="p-2 sm:p-4 border-t">
+                  <CardFooter className="p-2 sm:p-4 border-t flex-shrink-0">
                     <form onSubmit={handleSubmit} className="flex w-full gap-2">
                       <Textarea
                         ref={inputRef}
@@ -1244,7 +1257,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   </CardFooter>
                 </TabsContent>
 
-                <TabsContent value="games" className="flex-1 flex flex-col p-0 m-0">
+                <TabsContent value="games" className="flex-1 flex flex-col p-0 m-0 min-h-0">
                   {!showGame ? (
                     <div className="flex-1 flex items-center justify-center p-8">
                       <div className="text-center space-y-4">
@@ -1255,83 +1268,49 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col">
-                      <div className="p-4 border-b">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Available Games</h3>
-                          <Button variant="ghost" size="icon" onClick={() => setGameExpanded(!gameExpanded)}>
-                            {gameExpanded ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <div className="p-2 sm:p-4 border-b flex items-center justify-between bg-muted/30 flex-shrink-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl sm:text-2xl">🎯</span>
+                          <span className="font-medium text-sm sm:text-base">Deadshot.io</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
+                            onClick={() => window.open("https://deadshot.io/", "_blank")}
+                          >
+                            <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8"
+                            onClick={() => setShowGame(false)}
+                          >
+                            <X className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
-
-                      {!gameExpanded ? (
-                        <div className="p-4 space-y-4">
-                          {availableGames.map((game) => (
-                            <div
-                              key={game.id}
-                              className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                              onClick={() => {
-                                setActiveGameTab(game.id)
-                                setGameExpanded(true)
-                              }}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="text-2xl">{game.icon}</div>
-                                <div className="flex-1">
-                                  <h4 className="font-medium">{game.name}</h4>
-                                  <p className="text-sm text-muted-foreground">{game.description}</p>
-                                  <Badge variant="outline" className="mt-1 text-xs">
-                                    {game.category}
-                                  </Badge>
-                                </div>
-                                <Button size="sm">Play Now</Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex flex-col">
-                          <div className="p-2 border-b flex items-center justify-between bg-muted/30">
-                            <div className="flex items-center gap-2">
-                              <span className="text-2xl">🎯</span>
-                              <span className="font-medium text-sm sm:text-base">Deadshot.io</span>
-                            </div>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 sm:h-8 sm:w-8"
-                                onClick={() => window.open("https://deadshot.io/", "_blank")}
-                              >
-                                <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 sm:h-8 sm:w-8"
-                                onClick={() => setGameExpanded(false)}
-                              >
-                                <Minimize className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex-1 relative">
-                            <iframe
-                              src="https://deadshot.io/"
-                              className="w-full h-full border-0"
-                              title="Deadshot.io Game"
-                              allow="fullscreen; gamepad; microphone; camera"
-                              style={{ minHeight: gameExpanded ? "calc(100vh - 200px)" : "400px" }}
-                            />
-                          </div>
-                        </div>
-                      )}
+                      <div className="flex-1 relative min-h-0">
+                        <iframe
+                          ref={gameIframeRef}
+                          src="https://deadshot.io/"
+                          className="w-full h-full border-0"
+                          title="Deadshot.io Game"
+                          allow="fullscreen; gamepad; microphone; camera; pointer-lock"
+                          style={{
+                            minHeight: "300px",
+                            cursor: showGame ? "none" : "default",
+                          }}
+                        />
+                      </div>
                     </div>
                   )}
                 </TabsContent>
 
-                <TabsContent value="history" className="flex-1 p-0 m-0">
+                <TabsContent value="history" className="flex-1 p-0 m-0 min-h-0">
                   <ScrollArea className="h-full p-4">
                     <div className="space-y-4">
                       <h3 className="font-medium text-sm text-muted-foreground">Recent Conversations</h3>

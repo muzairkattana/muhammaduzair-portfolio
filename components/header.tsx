@@ -46,7 +46,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="#home" className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/50 transition-colors">
-              <Image src="/images/uzair-profile.jpg" alt="Muhammad Uzair" fill className="object-cover" priority />
+              <Image src="/images/uzair-logo.jpg" alt="Muhammad Uzair" fill className="object-cover" priority />
             </div>
             <span className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
               Muhammad Uzair

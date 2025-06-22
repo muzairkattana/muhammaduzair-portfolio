@@ -1,13 +1,13 @@
 "use client"
 
-import React, { createContext, useContext, useState, useRef, useCallback } from "react"
+import type React from "react"
+import { createContext, useContext, useState, useRef, useEffect } from "react"
 
 interface TextToSpeechContextType {
   isReading: boolean
   currentElement: HTMLElement | null
-  readText: (text: string, element: HTMLElement) => void
-  stopReading: () => void
   toggleReading: (text: string, element: HTMLElement) => void
+  stopReading: () => void
 }
 
 const TextToSpeechContext = createContext<TextToSpeechContextType | undefined>(undefined)
@@ -15,103 +15,75 @@ const TextToSpeechContext = createContext<TextToSpeechContextType | undefined>(u
 export function TextToSpeechProvider({ children }: { children: React.ReactNode }) {
   const [isReading, setIsReading] = useState(false)
   const [currentElement, setCurrentElement] = useState<HTMLElement | null>(null)
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const synthRef = useRef<SpeechSynthesis | null>(null)
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== "undefined") {
       synthRef.current = window.speechSynthesis
     }
   }, [])
 
-  const readText = useCallback((text: string, element: HTMLElement) => {
+  const stopReading = () => {
+    if (synthRef.current && utteranceRef.current) {
+      synthRef.current.cancel()
+      setIsReading(false)
+      setCurrentElement(null)
+      utteranceRef.current = null
+    }
+  }
+
+  const toggleReading = (text: string, element: HTMLElement) => {
     if (!synthRef.current) return
 
-    // Stop any current reading
-    stopReading()
-
-    // Clean text for better speech
-    const cleanText = text
-      .replace(/[^\w\s.,!?;:-]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-
-    if (!cleanText) return
-
-    const utterance = new SpeechSynthesisUtterance(cleanText)
-    utterance.rate = 0.9
-    utterance.pitch = 1
-    utterance.volume = 0.8
-
-    // Set voice preference (English)
-    const voices = synthRef.current.getVoices()
-    const englishVoice = voices.find(
-      (voice) => voice.lang.includes("en") && (voice.name.includes("Female") || voice.name.includes("Google")),
-    )
-    if (englishVoice) {
-      utterance.voice = englishVoice
+    // If currently reading the same element, stop
+    if (isReading && currentElement === element) {
+      stopReading()
+      return
     }
+
+    // Stop any current reading
+    if (isReading) {
+      stopReading()
+    }
+
+    // Start new reading
+    const utterance = new SpeechSynthesisUtterance(text)
+
+    // Apply voice ID if available
+    const voices = synthRef.current.getVoices()
+    const selectedVoice = voices.find((voice) => voice.voiceURI === "RTFg9niKcgGLDwa3RFlz") || voices[0]
+    if (selectedVoice) {
+      utterance.voice = selectedVoice
+    }
+
+    utterance.rate = 1
+    utterance.pitch = 1
+    utterance.volume = 1
 
     utterance.onstart = () => {
       setIsReading(true)
       setCurrentElement(element)
-      element.style.backgroundColor = "rgba(59, 130, 246, 0.1)"
-      element.style.outline = "2px solid rgba(59, 130, 246, 0.3)"
-      element.style.transition = "all 0.3s ease"
     }
 
     utterance.onend = () => {
       setIsReading(false)
       setCurrentElement(null)
-      element.style.backgroundColor = ""
-      element.style.outline = ""
+      utteranceRef.current = null
     }
 
     utterance.onerror = () => {
       setIsReading(false)
       setCurrentElement(null)
-      element.style.backgroundColor = ""
-      element.style.outline = ""
+      utteranceRef.current = null
     }
 
     utteranceRef.current = utterance
     synthRef.current.speak(utterance)
-  }, [])
-
-  const stopReading = useCallback(() => {
-    if (synthRef.current) {
-      synthRef.current.cancel()
-    }
-    if (currentElement) {
-      currentElement.style.backgroundColor = ""
-      currentElement.style.outline = ""
-    }
-    setIsReading(false)
-    setCurrentElement(null)
-    utteranceRef.current = null
-  }, [currentElement])
-
-  const toggleReading = useCallback(
-    (text: string, element: HTMLElement) => {
-      if (isReading && currentElement === element) {
-        stopReading()
-      } else {
-        readText(text, element)
-      }
-    },
-    [isReading, currentElement, readText, stopReading],
-  )
+  }
 
   return (
-    <TextToSpeechContext.Provider
-      value={{
-        isReading,
-        currentElement,
-        readText,
-        stopReading,
-        toggleReading,
-      }}
-    >
+    <TextToSpeechContext.Provider value={{ isReading, currentElement, toggleReading, stopReading }}>
       {children}
     </TextToSpeechContext.Provider>
   )

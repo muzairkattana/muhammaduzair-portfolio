@@ -26,7 +26,7 @@ export function ClickableText({ children, className = "", as: Component = "div" 
     Component,
     {
       ref: elementRef,
-      className: `cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors duration-200 ${className}`,
+      className: `cursor-pointer transition-colors duration-200 ${className}`,
       onClick: handleClick,
       title: "Click to read aloud",
     },
