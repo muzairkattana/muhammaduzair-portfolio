@@ -28,8 +28,6 @@ import {
   Loader2,
   Phone,
   AlertCircle,
-  Gamepad2,
-  Play,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardFooter, CardHeader } from "@/components/ui/card"
@@ -101,7 +99,7 @@ const quickResponses = [
   "How can I contact you?",
   "What certificates do you have?",
   "What services do you offer?",
-  "Show me some games",
+  "Tell me about your experience",
 ]
 
 // Enhanced games database with playable games
@@ -679,16 +677,6 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
         }
       }
 
-      if (input.includes("game") || input.includes("play") || input.includes("gaming")) {
-        setActiveTab("games")
-        return {
-          response:
-            "I have an amazing collection of games for you! Check out the Games section - we have top 3D and 2D games available. Click on any game to play it directly in the chatbot!",
-          category: "games",
-          isImportant: false,
-        }
-      }
-
       return {
         response:
           "Thank you for your question. Muhammad Uzair's portfolio showcases his expertise in web development, AI technologies, and business strategy. Could you please provide more details about what specific information you're looking for? I'd be happy to help you navigate through his work, skills, certifications, or contact information.",
@@ -1074,10 +1062,6 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                   <TabsTrigger value="chat" className="flex items-center gap-1 text-xs sm:text-sm">
                     <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">Chat</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="games" className="flex items-center gap-1 text-xs sm:text-sm">
-                    <Gamepad2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Games</span>
                   </TabsTrigger>
                   <TabsTrigger value="history" className="flex items-center gap-1 text-xs sm:text-sm">
                     <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1471,114 +1455,6 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                       </div>
                     </form>
                   </CardFooter>
-                </TabsContent>
-
-                <TabsContent value="games" className="flex-1 flex flex-col p-0 m-0 min-h-0">
-                  <div className="p-4 space-y-6">
-                    {/* Games Header */}
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mb-4">
-                        <Gamepad2 className="h-8 w-8 text-white" />
-                      </div>
-                      <h3 className="text-xl font-bold mb-2">Gaming Collection</h3>
-                      <p className="text-muted-foreground text-sm">Play amazing 3D and 2D games directly here!</p>
-                    </div>
-
-                    {/* Embedded Game Viewer */}
-                    {embeddedGameUrl && (
-                      <div className="border rounded-lg overflow-hidden bg-background mb-6">
-                        <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{selectedGame?.icon}</span>
-                            <h5 className="font-semibold text-sm">{selectedGame?.name}</h5>
-                            <Badge variant="secondary" className="text-xs">
-                              Playing
-                            </Badge>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => {
-                              setEmbeddedGameUrl(null)
-                              setSelectedGame(null)
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="relative h-64 sm:h-80 lg:h-96">
-                          {isGameLoading ? (
-                            <div className="flex items-center justify-center h-full bg-gradient-to-br from-primary/5 to-primary/10">
-                              <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                                <span className="text-sm text-muted-foreground">Loading game...</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <iframe
-                              src={embeddedGameUrl}
-                              className="w-full h-full border-0"
-                              title={selectedGame?.name}
-                              allowFullScreen
-                              allow="gamepad; microphone; camera"
-                              sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-orientation-lock allow-popups"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 3D Games Section */}
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-lg flex items-center gap-2">
-                        <span className="text-2xl">🎮</span>
-                        Top 3D Games
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
-                        {gamesDatabase["3d"].map((game, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            className="justify-start h-auto p-3 hover:bg-primary/5 transition-all duration-200"
-                            onClick={() => handleGameClick(game)}
-                          >
-                            <span className="text-lg mr-3">{game.icon}</span>
-                            <div className="text-left flex-1">
-                              <div className="font-medium text-sm">{game.name}</div>
-                              <div className="text-xs text-muted-foreground">Click to play</div>
-                            </div>
-                            <Play className="h-4 w-4 ml-auto text-green-500" />
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 2D Games Section */}
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-lg flex items-center gap-2">
-                        <span className="text-2xl">🕹️</span>
-                        Top 2D Games
-                      </h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        {gamesDatabase["2d"].map((game, index) => (
-                          <Button
-                            key={index}
-                            variant="outline"
-                            className="justify-start h-auto p-3 hover:bg-primary/5 transition-all duration-200"
-                            onClick={() => handleGameClick(game)}
-                          >
-                            <span className="text-lg mr-3">{game.icon}</span>
-                            <div className="text-left flex-1">
-                              <div className="font-medium text-sm">{game.name}</div>
-                              <div className="text-xs text-muted-foreground">Click to play</div>
-                            </div>
-                            <Play className="h-4 w-4 ml-auto text-green-500" />
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="history" className="flex-1 p-0 m-0 min-h-0">
