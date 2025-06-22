@@ -102,6 +102,44 @@ const quickResponses = [
   "Tell me about your experience",
 ]
 
+// Enhanced games database with playable games
+const gamesDatabase = {
+  "3d": [
+    { name: "Elden Ring", url: "https://www.crazygames.com/game/elden-ring-adventure", icon: "🗡️", playable: true },
+    {
+      name: "Baldur's Gate 3",
+      url: "https://www.crazygames.com/game/baldurs-gate-3-adventure",
+      icon: "🐉",
+      playable: true,
+    },
+    {
+      name: "Final Fantasy XVI",
+      url: "https://www.crazygames.com/game/final-fantasy-adventure",
+      icon: "⚔️",
+      playable: true,
+    },
+    { name: "The Legend of Zelda", url: "https://www.crazygames.com/game/zelda-adventure", icon: "🏰", playable: true },
+    { name: "Starfield", url: "https://www.crazygames.com/game/space-adventure", icon: "🚀", playable: true },
+    { name: "Hogwarts Legacy", url: "https://www.crazygames.com/game/magic-adventure", icon: "🪄", playable: true },
+    { name: "Spider-Man 2", url: "https://www.crazygames.com/game/spider-man-adventure", icon: "🕷️", playable: true },
+    { name: "Resident Evil 4", url: "https://www.crazygames.com/game/zombie-survival", icon: "🧟", playable: true },
+    { name: "God of War", url: "https://www.crazygames.com/game/god-of-war-adventure", icon: "⚡", playable: true },
+    { name: "Cyberpunk 2077", url: "https://www.crazygames.com/game/cyberpunk-adventure", icon: "🤖", playable: true },
+  ],
+  "2d": [
+    { name: "Bionic Bay", url: "https://www.crazygames.com/game/bionic-bay", icon: "🦾", playable: true },
+    { name: "Shadow Labyrinth", url: "https://www.crazygames.com/game/shadow-labyrinth", icon: "🌑", playable: true },
+    {
+      name: "Lorelei and the Laser Eyes",
+      url: "https://www.crazygames.com/game/puzzle-adventure",
+      icon: "👁️",
+      playable: true,
+    },
+    { name: "Pipistrello", url: "https://www.crazygames.com/game/platform-adventure", icon: "🦇", playable: true },
+    { name: "OlliOlli World", url: "https://www.crazygames.com/game/skateboard-world", icon: "🛹", playable: true },
+  ],
+}
+
 // Knowledge base for the assistant
 const knowledgeBase = {
   skills: [
@@ -187,6 +225,14 @@ export default function AIAssistant() {
   const [error, setError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [isButtonHovered, setIsButtonHovered] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<{
+    name: string
+    url: string
+    icon: string
+    playable?: boolean
+  } | null>(null)
+  const [embeddedGameUrl, setEmbeddedGameUrl] = useState<string | null>(null)
+  const [isGameLoading, setIsGameLoading] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -207,25 +253,6 @@ export default function AIAssistant() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
-
-  // Enhanced click outside detection
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
-        // Check if the click is on the chatbot button
-        const chatButton = document.querySelector("[data-chatbot-button]")
-        if (chatButton && chatButton.contains(event.target as Node)) {
-          return // Don't close if clicking the button
-        }
-        setIsOpen(false)
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [isOpen])
 
   // Auto-close when cursor is removed
   useEffect(() => {
@@ -810,98 +837,65 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
       )
     : messages
 
+  // Enhanced game click handler for playable games
+  const handleGameClick = (game: { name: string; url: string; icon: string; playable?: boolean }) => {
+    setIsGameLoading(true)
+    setSelectedGame(game)
+
+    if (game.playable) {
+      setEmbeddedGameUrl(game.url)
+
+      // Add message about starting game
+      const gameMessage: Message = {
+        id: Date.now().toString(),
+        content: `🎮 Starting ${game.name}... Get ready to play!`,
+        role: "assistant",
+        timestamp: new Date(),
+        category: "games",
+        isImportant: false,
+      }
+      setMessages((prev) => [...prev, gameMessage])
+
+      setTimeout(() => setIsGameLoading(false), 2000)
+    } else {
+      window.open(game.url, "_blank")
+      setIsGameLoading(false)
+    }
+  }
+
   return (
     <>
-      {/* Enhanced Chat button with gaming-style effects */}
+      {/* Chat button with hover effects */}
       <motion.div
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50"
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ delay: 1, type: "spring", stiffness: 200, damping: 15 }}
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 1 }}
       >
-        <div className="relative">
-          {/* Pulsing ring effect */}
-          <motion.div
-            className="absolute inset-0 rounded-full border-2 border-primary/30"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.5, 0, 0.5],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Highlight ring when available */}
-          <motion.div
-            className="absolute inset-0 rounded-full border-2 border-green-400/60"
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.8, 0.3, 0.8],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Number.POSITIVE_INFINITY,
-              ease: "easeInOut",
-            }}
-          />
-
-          <Button
-            data-chatbot-button
-            onClick={() => setIsOpen(true)}
-            onMouseEnter={() => setIsButtonHovered(true)}
-            onMouseLeave={() => setIsButtonHovered(false)}
-            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-2xl relative overflow-hidden group p-0 border-2 border-white/20 transition-all duration-300 hover:shadow-primary/25 hover:shadow-2xl"
-            size="icon"
+        <Button
+          onClick={() => setIsOpen(true)}
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => setIsButtonHovered(false)}
+          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg relative overflow-hidden group p-0 border-2 border-white/20"
+          size="icon"
+        >
+          <div
+            className={`absolute inset-0 transition-all duration-300 ${
+              isButtonHovered ? "brightness-75 scale-105" : "brightness-100 scale-100"
+            }`}
           >
-            <motion.div
-              className={`absolute inset-0 transition-all duration-300 ${
-                isButtonHovered ? "brightness-50 scale-110" : "brightness-100 scale-100"
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <img
-                src="/images/uzair-chatbot.jpg"
-                alt="Muhammad Uzair Assistant"
-                className="w-full h-full object-cover rounded-full"
-              />
-            </motion.div>
-
-            {/* Dark overlay on hover */}
-            <motion.div
-              className="absolute inset-0 bg-black/40 rounded-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isButtonHovered ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
+            <img
+              src="/images/uzair-chatbot.jpg"
+              alt="Muhammad Uzair Assistant"
+              className="w-full h-full object-cover rounded-full"
             />
-
-            {/* Gaming-style glow effect */}
-            <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/20 via-transparent to-primary/20"
-              animate={{
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "linear",
-              }}
-            />
-          </Button>
-
-          {/* Available badge */}
-          <motion.div
-            className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full border-2 border-white shadow-lg"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 1.5, type: "spring", stiffness: 300 }}
-          >
-            Available
-          </motion.div>
-        </div>
+          </div>
+          <div
+            className={`absolute inset-0 bg-black/20 rounded-full transition-opacity duration-300 ${
+              isButtonHovered ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        </Button>
       </motion.div>
 
       {/* Chat window */}
@@ -913,15 +907,15 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                 ? "inset-2 sm:inset-4 md:inset-6 lg:inset-8"
                 : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[90vw] sm:max-w-[400px] md:max-w-[420px] lg:max-w-[450px] h-[calc(100vh-100px)] max-h-[80vh] sm:max-h-[600px] md:max-h-[650px] lg:max-h-[700px]"
             }`}
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 50 }}
-            transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 25 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.2 }}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
             ref={chatContainerRef}
           >
-            <Card className="shadow-2xl border-primary/20 overflow-hidden h-full w-full flex flex-col bg-background/95 backdrop-blur-sm">
+            <Card className="shadow-xl border-primary/20 overflow-hidden h-full w-full flex flex-col bg-background/95 backdrop-blur-sm">
               <CardHeader className="p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/20 flex-shrink-0">
