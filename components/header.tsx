@@ -1,18 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import Image from "next/image"
-import { motion } from "framer-motion"
-import { Menu, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Menu, X, Download, Phone, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
     }
@@ -32,80 +34,223 @@ export default function Header() {
     { href: "#contact", label: "Contact" },
   ]
 
+  const handleNavClick = (href: string) => {
+    setIsMenuOpen(false)
+    const element = document.querySelector(href)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
+  const downloadCV = () => {
+    const link = document.createElement("a")
+    link.href = "/cv/Muhammad-Uzair-CV.pdf"
+    link.download = "Muhammad-Uzair-CV.pdf"
+    link.click()
+  }
+
+  // Don't render until mounted to prevent hydration issues
+  if (!isMounted) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-50 bg-transparent">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20"></div>
+              <span className="text-xl font-bold">Muhammad Uzair</span>
+            </div>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-background/95 backdrop-blur-md shadow-lg" : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolled ? "bg-background/95 backdrop-blur-xl shadow-lg border-b border-border/50" : "bg-transparent"
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-14 sm:h-16">
-          {/* Logo */}
-          <Link href="#home" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/50 transition-colors">
-              <Image src="/images/uzair-logo.jpg" alt="Muhammad Uzair" fill className="object-cover" priority />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-18">
+          {/* Logo Section */}
+          <motion.div
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
+            onClick={() => handleNavClick("#home")}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="relative w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden border-2 border-primary/30 group-hover:border-primary/60 transition-all duration-300 shadow-lg">
+              <Image
+                src="/images/uzair-logo.jpg"
+                alt="Muhammad Uzair"
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                priority
+              />
             </div>
-            <span className="text-lg sm:text-xl font-bold text-foreground group-hover:text-primary transition-colors hidden sm:block">
-              Muhammad Uzair
-            </span>
-            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors sm:hidden">
-              MU
-            </span>
-          </Link>
+            <div className="flex flex-col">
+              <span className="text-base sm:text-lg lg:text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
+                Muhammad Uzair
+              </span>
+              <span className="text-xs text-muted-foreground hidden sm:block">Full Stack Developer</span>
+            </div>
+          </motion.div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            {navItems.map((item) => (
-              <Link
+          <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+            {navItems.map((item, index) => (
+              <motion.button
                 key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative group"
+                onClick={() => handleNavClick(item.href)}
+                className="relative px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-300 group"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
-              </Link>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 group-hover:w-full"></span>
+              </motion.button>
             ))}
           </nav>
 
-          {/* Theme Toggle & Mobile Menu */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Contact Buttons - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open("tel:+923001234567", "_self")}
+                className="text-xs hover:bg-primary/10 hover:text-primary transition-all duration-300"
+              >
+                <Phone className="h-3 w-3 mr-1" />
+                Call
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open("mailto:uzair@example.com", "_self")}
+                className="text-xs hover:bg-primary/10 hover:text-primary transition-all duration-300"
+              >
+                <Mail className="h-3 w-3 mr-1" />
+                Email
+              </Button>
+            </div>
+
+            {/* Download CV Button */}
+            <Button
+              onClick={downloadCV}
+              size="sm"
+              className="hidden sm:flex bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white px-3 py-1.5 text-xs font-medium transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              <Download className="h-3 w-3 mr-1" />
+              CV
+            </Button>
+
+            {/* Theme Toggle */}
             <ThemeToggle />
+
+            {/* Mobile Menu Button */}
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden h-8 w-8 sm:h-10 sm:w-10"
+              className="lg:hidden h-8 w-8 sm:h-10 sm:w-10 hover:bg-primary/10 transition-colors duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
+              <AnimatePresence mode="wait">
+                {isMenuOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <motion.nav
-            className="lg:hidden py-4 border-t border-border"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div className="flex flex-col space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </motion.nav>
-        )}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.nav
+              className="lg:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="py-4 space-y-2">
+                {navItems.map((item, index) => (
+                  <motion.button
+                    key={item.href}
+                    onClick={() => handleNavClick(item.href)}
+                    className="block w-full text-left px-4 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all duration-300 rounded-lg mx-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {item.label}
+                  </motion.button>
+                ))}
+
+                {/* Mobile Action Buttons */}
+                <div className="flex flex-col gap-2 px-4 pt-4 border-t border-border/30">
+                  <Button
+                    onClick={downloadCV}
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-medium transition-all duration-300"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download CV
+                  </Button>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open("tel:+923001234567", "_self")}
+                      className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all duration-300"
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open("mailto:uzair@example.com", "_self")}
+                      className="flex-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all duration-300"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Email
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </div>
     </motion.header>
   )

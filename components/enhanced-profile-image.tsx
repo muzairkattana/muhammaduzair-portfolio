@@ -112,13 +112,13 @@ export default function EnhancedProfileImage({ src, alt, className = "" }: Enhan
         {/* Subtle glow effect */}
         <div className="absolute -z-10 inset-0 rounded-full bg-primary/10 blur-xl transform scale-105 animate-pulse" />
 
-        {/* Professional badges */}
+        {/* Professional badges moved to border */}
         <motion.div
-          className="absolute -bottom-4 -left-4 bg-background rounded-lg p-3 shadow-lg"
+          className="absolute -bottom-2 -left-2 bg-background rounded-lg p-2 shadow-lg border-2 border-primary/20"
           animate={{ y: isHovered ? -3 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="h-6 w-6 text-primary">
+          <div className="h-4 w-4 text-primary">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -133,8 +133,17 @@ export default function EnhancedProfileImage({ src, alt, className = "" }: Enhan
           </div>
         </motion.div>
 
+        {/* Available badge moved to profile border */}
         <motion.div
-          className="absolute -top-4 -right-4 bg-background rounded-lg p-3 shadow-lg"
+          className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full border-2 border-white shadow-lg"
+          animate={{ y: isHovered ? 3 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          Available
+        </motion.div>
+
+        <motion.div
+          className="absolute -bottom-2 -right-2 bg-background rounded-lg p-2 shadow-lg border-2 border-primary/20"
           animate={{ y: isHovered ? 3 : 0 }}
           transition={{ duration: 0.2 }}
         >

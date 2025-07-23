@@ -98,10 +98,10 @@ class AudioManager {
       this.backgroundMusic.src = BASE64_MUSIC
 
       // Try to load the actual file
-      const actualMusic = new Audio("/audio/background-music.mp3")
+      const actualMusic = new Audio("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_2D60DOzAO4WRXbrBjQTJZGPjeFoV/Mtm9nnNs9Oc0YeNblCS2hO/public/audio/background-music.mp3")
       actualMusic.oncanplaythrough = () => {
         if (this.backgroundMusic) {
-          this.backgroundMusic.src = "/audio/background-music.mp3"
+          this.backgroundMusic.src = "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/git-blob/prj_2D60DOzAO4WRXbrBjQTJZGPjeFoV/Mtm9nnNs9Oc0YeNblCS2hO/public/audio/background-music.mp3"
         }
       }
 
