@@ -182,7 +182,15 @@ export default function PortfolioSection() {
   }
 
   return (
-    <section id="portfolio" className="py-20 bg-gradient-to-br from-background via-background to-muted/20">
+    <section
+      id="portfolio"
+      className="py-20 bg-gradient-to-br from-background via-muted/5 to-background relative overflow-hidden"
+    >
+      {/* Add background elements */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-primary/3 to-secondary/3 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-gradient-to-r from-secondary/3 to-primary/3 rounded-full blur-3xl"></div>
+      </div>
       <div className="container mx-auto px-4 md:px-6">
         <motion.div
           ref={ref}
@@ -226,7 +234,7 @@ export default function PortfolioSection() {
           <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProjects.map((project) => (
               <motion.div key={project.id} variants={itemVariants} whileHover={{ y: -10 }} className="group">
-                <Card className="h-full overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-card to-card/50">
+                <Card className="h-full overflow-hidden border border-border/50 shadow-lg hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm">
                   <div className="relative overflow-hidden">
                     <Image
                       src={project.image || "/placeholder.svg"}
@@ -235,7 +243,7 @@ export default function PortfolioSection() {
                       height={300}
                       className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute top-4 right-4">
                       <Badge variant={project.status === "Completed" ? "default" : "secondary"}>{project.status}</Badge>
                     </div>
@@ -257,18 +265,20 @@ export default function PortfolioSection() {
                     </div>
                   </div>
 
-                  <CardHeader className="space-y-3">
+                  <CardHeader className="space-y-4 p-6">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline">{project.category}</Badge>
-                      <span className="text-sm text-muted-foreground">{project.year}</span>
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        {project.category}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground font-medium">{project.year}</span>
                     </div>
                     <ClickableText
                       as={CardTitle}
-                      className="text-xl font-bold group-hover:text-primary transition-colors"
+                      className="text-xl font-bold group-hover:text-primary transition-colors leading-tight"
                     >
                       {project.title}
                     </ClickableText>
-                    <ClickableText as={CardDescription} className="text-muted-foreground">
+                    <ClickableText as={CardDescription} className="text-muted-foreground leading-relaxed">
                       {project.description}
                     </ClickableText>
                   </CardHeader>
@@ -326,7 +336,7 @@ export default function PortfolioSection() {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                className="bg-background/98 backdrop-blur-xl rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-border/50 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="relative">
@@ -473,7 +483,7 @@ export default function PortfolioSection() {
                         View Live Project
                       </a>
                     </Button>
-                    <Button variant="outline" asChild className="flex-1">
+                    <Button variant="outline" asChild className="flex-1 bg-transparent">
                       <a href={selectedProject.github} target="_blank" rel="noopener noreferrer">
                         <Github className="h-4 w-4 mr-2" />
                         View Source Code

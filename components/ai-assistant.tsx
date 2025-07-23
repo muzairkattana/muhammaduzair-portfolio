@@ -916,7 +916,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
             className={`fixed z-50 ${
               isExpanded
                 ? "inset-2 sm:inset-4 md:inset-6 lg:inset-8"
-                : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[90vw] sm:max-w-[400px] md:max-w-[420px] lg:max-w-[450px] h-[calc(100vh-100px)] max-h-[80vh] sm:max-h-[600px] md:max-h-[650px] lg:max-h-[700px]"
+                : "bottom-2 right-2 sm:bottom-6 sm:right-6 w-[calc(100vw-16px)] max-w-[95vw] sm:max-w-[400px] md:max-w-[420px] lg:max-w-[450px] h-[calc(100vh-120px)] max-h-[85vh] sm:max-h-[600px] md:max-h-[650px] lg:max-h-[700px]"
             }`}
             initial={{ opacity: 0, scale: 0.8, y: 50 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -926,8 +926,8 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
             onMouseLeave={() => setIsHovering(false)}
             ref={chatContainerRef}
           >
-            <Card className="shadow-2xl border-primary/20 overflow-hidden h-full w-full flex flex-col bg-background/95 backdrop-blur-sm">
-              <CardHeader className="p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary to-primary/70 flex-shrink-0">
+            <Card className="shadow-2xl border-primary/20 overflow-hidden h-full w-full flex flex-col bg-background/98 backdrop-blur-xl border border-border/50">
+              <CardHeader className="p-3 sm:p-4 border-b flex flex-row items-center justify-between bg-gradient-to-r from-primary via-primary/90 to-primary/80 flex-shrink-0">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-white/20 flex-shrink-0">
                     <AvatarImage src="/images/uzair-chatbot.jpg" alt="Muhammad Uzair" className="object-cover" />
@@ -1163,7 +1163,9 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs sm:text-sm whitespace-pre-wrap">{message.content}</p>
+                              <p className="text-sm sm:text-base whitespace-pre-wrap leading-relaxed">
+                                {message.content}
+                              </p>
                               <div className="text-[10px] sm:text-xs opacity-50 mt-1 text-right">
                                 {message.timestamp.toLocaleTimeString([], {
                                   hour: "2-digit",
@@ -1312,18 +1314,13 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           onChange={(e) => setInput(e.target.value)}
                           onKeyDown={handleKeyDown}
                           placeholder="Type your message..."
-                          className="min-h-[2.5rem] max-h-32 resize-none text-xs sm:text-sm pr-12"
+                          className="min-h-[3rem] max-h-32 resize-none text-sm sm:text-base pr-12 border-border/50"
                           disabled={isLoading}
                           rows={1}
                           style={{
                             height: "auto",
-                            minHeight: "2.5rem",
+                            minHeight: "3rem",
                             maxHeight: "8rem",
-                          }}
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement
-                            target.style.height = "auto"
-                            target.style.height = Math.min(target.scrollHeight, 128) + "px"
                           }}
                         />
                       </div>
@@ -1455,7 +1452,7 @@ Muhammad Uzair is available for freelance projects, contract work, and full-time
                           type="submit"
                           size="icon"
                           disabled={isLoading || !input.trim()}
-                          className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                          className="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                         >
                           {isLoading ? (
                             <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />

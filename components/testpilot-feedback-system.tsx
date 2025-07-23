@@ -6,942 +6,852 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Star,
-  MessageSquare,
+  Upload,
+  X,
   ThumbsUp,
   Download,
-  UserX,
-  Calendar,
+  Eye,
+  Trash2,
+  Check,
+  MessageSquare,
   Tag,
-  Settings,
-  Bell,
+  Calendar,
+  Globe,
   Shield,
-  Sparkles,
-  Moon,
-  Sun,
-  Search,
-  RefreshCw,
-  ImageIcon,
-  Send,
   Clock,
-  CheckCircle,
-  XCircle,
+  Search,
+  Bot,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
-import { useToast } from "@/components/ui/use-toast"
-import { useSound } from "./sound-provider"
-import Image from "next/image"
 
 interface Feedback {
   id: string
   rating: number
   text: string
   tags: string[]
-  images: string[]
   userName: string
   isAnonymous: boolean
   timestamp: Date
-  isApproved: boolean
+  status: "pending" | "approved" | "rejected"
   upvotes: number
-  hasUpvoted: boolean
   language: "en" | "ur"
+  images?: string[]
   aiSummary?: string
   autoTags?: string[]
 }
 
-const availableTags = [
-  { id: "bug", label: "Bug", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100" },
-  { id: "feature", label: "Feature Request", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100" },
-  { id: "ui-ux", label: "UI/UX", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100" },
-  {
-    id: "performance",
-    label: "Performance",
-    color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100",
-  },
-  { id: "suggestion", label: "Suggestion", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" },
-  { id: "design", label: "Design", color: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-100" },
-  { id: "content", label: "Content", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100" },
-  {
-    id: "accessibility",
-    label: "Accessibility",
-    color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100",
-  },
+const AVAILABLE_TAGS = [
+  "Bug",
+  "Feature Request",
+  "UI/UX",
+  "Performance",
+  "Suggestion",
+  "Design",
+  "Content",
+  "Navigation",
+  "Mobile",
+  "Accessibility",
 ]
 
-const languages = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "ur", label: "اردو", flag: "🇵🇰" },
+const LANGUAGES = [
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "ur", name: "اردو", flag: "🇵🇰" },
 ]
 
 export default function TestPilotFeedbackSystem() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [adminPassword, setAdminPassword] = useState("")
-  const [showAdminLogin, setShowAdminLogin] = useState(false)
-  const [filterRating, setFilterRating] = useState<number | null>(null)
-  const [filterTag, setFilterTag] = useState<string | null>(null)
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false)
+  const [filterRating, setFilterRating] = useState("all")
+  const [filterTag, setFilterTag] = useState("all")
+  const [filterStatus, setFilterStatus] = useState("approved")
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "rating" | "upvotes">("newest")
-  const [currentLanguage, setCurrentLanguage] = useState<"en" | "ur">("en")
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showStats, setShowStats] = useState(false)
-
-  const { toast } = useToast()
-  const { playSound } = useSound()
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "ur">("en")
 
   // Form state
   const [formData, setFormData] = useState({
-    rating: 5,
+    rating: 0,
     text: "",
     tags: [] as string[],
-    images: [] as File[],
     userName: "",
     isAnonymous: false,
-    language: "en" as "en" | "ur",
+    images: [] as string[],
   })
 
-  // Mock data for demonstration
+  // Sample data
   useEffect(() => {
-    const mockFeedbacks: Feedback[] = [
+    const sampleFeedbacks: Feedback[] = [
       {
         id: "1",
         rating: 5,
-        text: "Amazing portfolio! The AI assistant is incredibly helpful and the design is stunning. Love the interactive elements and smooth animations.",
-        tags: ["ui-ux", "design"],
-        images: [],
+        text: "Amazing portfolio! The design is modern and the animations are smooth.",
+        tags: ["UI/UX", "Design"],
         userName: "Sarah Johnson",
         isAnonymous: false,
         timestamp: new Date("2024-01-15"),
-        isApproved: true,
+        status: "approved",
         upvotes: 12,
-        hasUpvoted: false,
         language: "en",
-        aiSummary: "Positive feedback about AI assistant and design quality",
-        autoTags: ["positive", "ai", "design"],
+        aiSummary: "Positive feedback about design and animations",
+        autoTags: ["Positive", "Design"],
       },
       {
         id: "2",
         rating: 4,
-        text: "Great work! Could use better mobile optimization for the contact form. Overall very impressive portfolio.",
-        tags: ["suggestion", "performance"],
-        images: [],
+        text: "Great work! Could use better mobile optimization.",
+        tags: ["Mobile", "Suggestion"],
         userName: "Anonymous",
         isAnonymous: true,
-        timestamp: new Date("2024-01-10"),
-        isApproved: true,
+        timestamp: new Date("2024-01-14"),
+        status: "approved",
         upvotes: 8,
-        hasUpvoted: false,
         language: "en",
-        aiSummary: "Positive feedback with mobile optimization suggestion",
+        aiSummary: "Positive with mobile improvement suggestion",
+        autoTags: ["Mobile", "Improvement"],
       },
       {
         id: "3",
         rating: 5,
-        text: "بہترین پورٹ فولیو! ڈیزائن اور فیچرز دونوں شاندار ہیں۔ AI اسسٹنٹ بہت مددگار ہے۔",
-        tags: ["design", "feature"],
-        images: [],
+        text: "بہترین پورٹ فولیو! ڈیزائن اور فیچرز بہت اچھے ہیں۔",
+        tags: ["Design", "Feature Request"],
         userName: "احمد علی",
         isAnonymous: false,
-        timestamp: new Date("2024-01-08"),
-        isApproved: true,
+        timestamp: new Date("2024-01-13"),
+        status: "approved",
         upvotes: 15,
-        hasUpvoted: false,
         language: "ur",
-        aiSummary: "Excellent portfolio with great design and AI assistant",
+        aiSummary: "Excellent portfolio with great design and features",
+        autoTags: ["Positive", "Design"],
       },
     ]
-    setFeedbacks(mockFeedbacks)
+    setFeedbacks(sampleFeedbacks)
   }, [])
 
-  const handleSubmitFeedback = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    if (formData.rating === 0 || !formData.text.trim()) return
 
-    // Simulate reCAPTCHA validation
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsSubmitting(true)
 
     // Simulate AI processing
-    const aiSummary = `${formData.rating >= 4 ? "Positive" : formData.rating >= 3 ? "Neutral" : "Negative"} feedback about ${formData.tags.join(", ")}`
-    const autoTags = formData.rating >= 4 ? ["positive"] : formData.rating >= 3 ? ["neutral"] : ["negative"]
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     const newFeedback: Feedback = {
       id: Date.now().toString(),
       ...formData,
       timestamp: new Date(),
-      isApproved: false, // Requires admin approval
+      status: "pending",
       upvotes: 0,
-      hasUpvoted: false,
-      aiSummary,
-      autoTags,
-      images: formData.images.map((file) => URL.createObjectURL(file)),
+      language: selectedLanguage,
+      aiSummary: generateAISummary(formData.text),
+      autoTags: generateAutoTags(formData.text),
     }
 
-    setFeedbacks([newFeedback, ...feedbacks])
+    setFeedbacks((prev) => [newFeedback, ...prev])
     setFormData({
-      rating: 5,
+      rating: 0,
       text: "",
       tags: [],
-      images: [],
       userName: "",
       isAnonymous: false,
-      language: "en",
+      images: [],
     })
-    setShowFeedbackForm(false)
-    setIsLoading(false)
-
-    toast({
-      title: currentLanguage === "en" ? "Feedback Submitted!" : "فیڈبیک جمع کر دیا گیا!",
-      description:
-        currentLanguage === "en"
-          ? "Thank you for your feedback. It will be reviewed and published soon."
-          : "آپ کے فیڈبیک کے لیے شکریہ۔ اسے جلد ہی ریویو کر کے پبلش کیا جائے گا۔",
-    })
-    playSound("success")
+    setIsSubmitting(false)
   }
 
-  const handleUpvote = (feedbackId: string) => {
-    setFeedbacks(
-      feedbacks.map((feedback) =>
-        feedback.id === feedbackId
-          ? {
-              ...feedback,
-              upvotes: feedback.hasUpvoted ? feedback.upvotes - 1 : feedback.upvotes + 1,
-              hasUpvoted: !feedback.hasUpvoted,
-            }
-          : feedback,
-      ),
+  const generateAISummary = (text: string): string => {
+    if (text.includes("good") || text.includes("great") || text.includes("amazing")) {
+      return "Positive feedback with appreciation"
+    } else if (text.includes("bug") || text.includes("issue") || text.includes("problem")) {
+      return "Bug report or technical issue"
+    } else if (text.includes("suggest") || text.includes("improve") || text.includes("better")) {
+      return "Improvement suggestion"
+    }
+    return "General feedback"
+  }
+
+  const generateAutoTags = (text: string): string[] => {
+    const tags = []
+    if (text.includes("mobile") || text.includes("phone")) tags.push("Mobile")
+    if (text.includes("design") || text.includes("ui") || text.includes("ux")) tags.push("Design")
+    if (text.includes("slow") || text.includes("fast") || text.includes("performance")) tags.push("Performance")
+    if (text.includes("bug") || text.includes("error")) tags.push("Bug")
+    return tags
+  }
+
+  const handleUpvote = (id: string) => {
+    setFeedbacks((prev) =>
+      prev.map((feedback) => (feedback.id === id ? { ...feedback, upvotes: feedback.upvotes + 1 } : feedback)),
     )
-    playSound("click")
   }
 
   const handleAdminLogin = () => {
     if (adminPassword === "admin123") {
-      setIsAdmin(true)
-      setShowAdminLogin(false)
-      toast({
-        title: "Admin Access Granted",
-        description: "Welcome to the admin panel!",
-      })
-      playSound("success")
-    } else {
-      toast({
-        title: "Access Denied",
-        description: "Invalid admin password",
-        variant: "destructive",
-      })
-      playSound("error")
+      setIsAdminAuthenticated(true)
+      setShowAdminPanel(true)
     }
   }
 
-  const handleApproveFeedback = (feedbackId: string) => {
-    setFeedbacks(
-      feedbacks.map((feedback) =>
-        feedback.id === feedbackId ? { ...feedback, isApproved: !feedback.isApproved } : feedback,
-      ),
-    )
-    playSound("click")
+  const handleStatusChange = (id: string, status: "approved" | "rejected") => {
+    setFeedbacks((prev) => prev.map((feedback) => (feedback.id === id ? { ...feedback, status } : feedback)))
   }
 
-  const handleDeleteFeedback = (feedbackId: string) => {
-    setFeedbacks(feedbacks.filter((feedback) => feedback.id !== feedbackId))
-    playSound("click")
+  const handleDelete = (id: string) => {
+    setFeedbacks((prev) => prev.filter((feedback) => feedback.id !== id))
   }
 
-  const exportFeedbacks = (format: "csv" | "json") => {
-    const data = feedbacks.map((feedback) => ({
-      id: feedback.id,
-      rating: feedback.rating,
-      text: feedback.text,
-      tags: feedback.tags.join(", "),
-      userName: feedback.isAnonymous ? "Anonymous" : feedback.userName,
-      timestamp: feedback.timestamp.toISOString(),
-      upvotes: feedback.upvotes,
-      language: feedback.language,
-    }))
-
+  const exportData = (format: "csv" | "json") => {
+    const data = feedbacks.filter((f) => f.status === "approved")
     if (format === "json") {
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "feedbacks.json"
+      a.download = "feedback-export.json"
       a.click()
     } else {
-      const csv = [Object.keys(data[0]).join(","), ...data.map((row) => Object.values(row).join(","))].join("\n")
+      const csv = [
+        "Rating,Text,Tags,User,Date,Upvotes",
+        ...data.map(
+          (f) =>
+            `${f.rating},"${f.text}","${f.tags.join(";")}",${f.userName},${f.timestamp.toISOString()},${f.upvotes}`,
+        ),
+      ].join("\n")
       const blob = new Blob([csv], { type: "text/csv" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = "feedbacks.csv"
+      a.download = "feedback-export.csv"
       a.click()
     }
-    playSound("success")
   }
 
-  const filteredFeedbacks = feedbacks
-    .filter((feedback) => (isAdmin ? true : feedback.isApproved))
-    .filter((feedback) => (filterRating ? feedback.rating === filterRating : true))
-    .filter((feedback) => (filterTag ? feedback.tags.includes(filterTag) : true))
-    .filter((feedback) => (searchQuery ? feedback.text.toLowerCase().includes(searchQuery.toLowerCase()) : true))
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "newest":
-          return b.timestamp.getTime() - a.timestamp.getTime()
-        case "oldest":
-          return a.timestamp.getTime() - b.timestamp.getTime()
-        case "rating":
-          return b.rating - a.rating
-        case "upvotes":
-          return b.upvotes - a.upvotes
-        default:
-          return 0
-      }
-    })
+  const filteredFeedbacks = feedbacks.filter((feedback) => {
+    if (filterStatus !== "all" && feedback.status !== filterStatus) return false
+    if (filterRating !== "all" && feedback.rating !== Number.parseInt(filterRating)) return false
+    if (filterTag !== "all" && !feedback.tags.includes(filterTag)) return false
+    if (searchQuery && !feedback.text.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    return true
+  })
 
   const stats = {
     total: feedbacks.length,
-    approved: feedbacks.filter((f) => f.isApproved).length,
-    pending: feedbacks.filter((f) => !f.isApproved).length,
-    averageRating: feedbacks.reduce((acc, f) => acc + f.rating, 0) / feedbacks.length || 0,
-    totalUpvotes: feedbacks.reduce((acc, f) => acc + f.upvotes, 0),
+    approved: feedbacks.filter((f) => f.status === "approved").length,
+    pending: feedbacks.filter((f) => f.status === "pending").length,
+    averageRating: feedbacks.length > 0 ? feedbacks.reduce((acc, f) => acc + f.rating, 0) / feedbacks.length : 0,
   }
 
-  const text = {
-    en: {
-      title: "Feedback & Reviews",
-      subtitle: "Share your experience and help us improve",
-      submitFeedback: "Submit Feedback",
-      rating: "Rating",
-      feedback: "Your Feedback",
-      tags: "Tags",
-      uploadImages: "Upload Images",
-      userName: "Your Name",
-      anonymous: "Submit Anonymously",
-      language: "Language",
-      submit: "Submit Feedback",
-      helpful: "Was this helpful?",
-      admin: "Admin Panel",
-      login: "Login",
-      approve: "Approve",
-      delete: "Delete",
-      export: "Export",
-      stats: "Statistics",
-      filter: "Filter",
-      search: "Search feedbacks...",
-      sort: "Sort by",
-    },
-    ur: {
-      title: "فیڈبیک اور جائزے",
-      subtitle: "اپنا تجربہ شیئر کریں اور ہمیں بہتر بنانے میں مدد کریں",
-      submitFeedback: "فیڈبیک جمع کریں",
-      rating: "ریٹنگ",
-      feedback: "آپ کا فیڈبیک",
-      tags: "ٹیگز",
-      uploadImages: "تصاویر اپ لوڈ کریں",
-      userName: "آپ کا نام",
-      anonymous: "گمنام طور پر جمع کریں",
-      language: "زبان",
-      submit: "فیڈبیک جمع کریں",
-      helpful: "کیا یہ مددگار تھا؟",
-      admin: "ایڈمن پینل",
-      login: "لاگ ان",
-      approve: "منظور کریں",
-      delete: "ڈیلیٹ کریں",
-      export: "ایکسپورٹ",
-      stats: "اعداد و شمار",
-      filter: "فلٹر",
-      search: "فیڈبیک تلاش کریں...",
-      sort: "ترتیب دیں",
-    },
-  }
-
-  const t = text[currentLanguage]
+  const ratingDistribution = [1, 2, 3, 4, 5].map((rating) => ({
+    rating,
+    count: feedbacks.filter((f) => f.rating === rating && f.status === "approved").length,
+  }))
 
   return (
-    <section className="py-16 relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-[url('/placeholder.svg?height=100&width=100')] opacity-5" />
-      <div className="absolute top-20 left-20 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-indigo-400/10 rounded-full blur-3xl" />
-
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
+    <section className="py-20 px-4 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900 rounded-full px-4 py-2 mb-6">
-            <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">TestPilot Feedback</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            {t.title}
+          <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            TestPilot Feedback System
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">{t.subtitle}</p>
-
-          {/* Language & Theme Toggle */}
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <Select value={currentLanguage} onValueChange={(value: "en" | "ur") => setCurrentLanguage(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {languages.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="flex items-center gap-2"
-            >
-              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-
-            {/* Admin Login */}
-            <Dialog open={showAdminLogin} onOpenChange={setShowAdminLogin}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
-                  <Shield className="h-4 w-4" />
-                  {t.admin}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Admin Login</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input
-                    type="password"
-                    placeholder="Admin Password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                  />
-                  <Button onClick={handleAdminLogin} className="w-full">
-                    {t.login}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Share your experience and help us improve. Your feedback drives our innovation.
+          </p>
         </motion.div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
-          <Tabs defaultValue="feedback" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="feedback">Feedback</TabsTrigger>
-              <TabsTrigger value="submit">Submit</TabsTrigger>
-              {isAdmin && <TabsTrigger value="admin">Admin</TabsTrigger>}
-            </TabsList>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Feedback Form */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-1"
+          >
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-800/80 border-blue-200 dark:border-blue-800 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-t-lg">
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Submit Feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Language Selection */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Language / زبان</Label>
+                    <Select value={selectedLanguage} onValueChange={(value: "en" | "ur") => setSelectedLanguage(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {/* Feedback Display */}
-            <TabsContent value="feedback" className="space-y-6">
-              {/* Filters */}
-              <Card className="p-4">
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center gap-2">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={t.search}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-64"
+                  {/* Rating */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      {selectedLanguage === "en" ? "Rating" : "ریٹنگ"}
+                    </Label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, rating: star }))}
+                          className="p-1 hover:scale-110 transition-transform"
+                        >
+                          <Star
+                            className={`h-6 w-6 ${
+                              star <= formData.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Feedback Text */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      {selectedLanguage === "en" ? "Your Feedback" : "آپ کی رائے"}
+                    </Label>
+                    <Textarea
+                      value={formData.text}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, text: e.target.value }))}
+                      placeholder={
+                        selectedLanguage === "en"
+                          ? "Share your thoughts, suggestions, or report issues..."
+                          : "اپنے خیالات، تجاویز، یا مسائل شیئر کریں..."
+                      }
+                      className="min-h-[100px] resize-none"
+                      dir={selectedLanguage === "ur" ? "rtl" : "ltr"}
                     />
                   </div>
 
-                  <Select
-                    value={filterRating?.toString() || "all"}
-                    onValueChange={(value) => setFilterRating(value === "all" ? null : Number.parseInt(value))}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Rating" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Ratings</SelectItem>
-                      {[5, 4, 3, 2, 1].map((rating) => (
-                        <SelectItem key={rating} value={rating.toString()}>
-                          {rating} Stars
-                        </SelectItem>
+                  {/* Tags */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      {selectedLanguage === "en" ? "Tags" : "ٹیگز"}
+                    </Label>
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (value && !formData.tags.includes(value)) {
+                          setFormData((prev) => ({ ...prev, tags: [...prev.tags, value] }))
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={selectedLanguage === "en" ? "Select tags..." : "ٹیگز منتخب کریں..."}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_TAGS.map((tag) => (
+                          <SelectItem key={tag} value={tag}>
+                            {tag}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="bg-blue-100 text-blue-800">
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                tags: prev.tags.filter((t) => t !== tag),
+                              }))
+                            }
+                            className="ml-1 hover:text-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </div>
+                  </div>
 
-                  <Select
-                    value={filterTag || "all"}
-                    onValueChange={(value) => setFilterTag(value === "all" ? null : value)}
+                  {/* User Name */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-sm font-medium">
+                        {selectedLanguage === "en" ? "Your Name" : "آپ کا نام"}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={formData.isAnonymous}
+                          onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isAnonymous: checked }))}
+                        />
+                        <Label className="text-xs">{selectedLanguage === "en" ? "Anonymous" : "گمنام"}</Label>
+                      </div>
+                    </div>
+                    <Input
+                      value={formData.userName}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, userName: e.target.value }))}
+                      placeholder={selectedLanguage === "en" ? "Enter your name..." : "اپنا نام درج کریں..."}
+                      disabled={formData.isAnonymous}
+                      dir={selectedLanguage === "ur" ? "rtl" : "ltr"}
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">
+                      {selectedLanguage === "en" ? "Screenshots (Optional)" : "اسکرین شاٹس (اختیاری)"}
+                    </Label>
+                    <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                      <Upload className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                      <p className="text-sm text-muted-foreground">
+                        {selectedLanguage === "en"
+                          ? "Click to upload images (PNG, JPG, WebP)"
+                          : "تصاویر اپ لوڈ کرنے کے لیے کلک کریں"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* reCAPTCHA Simulation */}
+                  <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-blue-500 rounded flex items-center justify-center">
+                        <Check className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <span className="text-sm">
+                        {selectedLanguage === "en" ? "I'm not a robot" : "میں روبوٹ نہیں ہوں"}
+                      </span>
+                      <Shield className="h-5 w-5 text-blue-500 ml-auto" />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || formData.rating === 0 || !formData.text.trim()}
+                    className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
                   >
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Tag" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Tags</SelectItem>
-                      {availableTags.map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id}>
-                          {tag.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {isSubmitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        {selectedLanguage === "en" ? "Processing..." : "پروسیسنگ..."}
+                      </div>
+                    ) : selectedLanguage === "en" ? (
+                      "Submit Feedback"
+                    ) : (
+                      "فیڈبیک جمع کریں"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          {/* Feedback Display */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-2"
+          >
+            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-800/80 border-blue-200 dark:border-blue-800 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-t-lg">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-5 w-5" />
+                    Community Feedback
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-white/20 text-white">
+                      {stats.approved} Reviews
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{stats.averageRating.toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {/* Filters */}
+                <div className="flex flex-wrap gap-4 mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-blue-500" />
+                    <Input
+                      placeholder="Search feedback..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-48"
+                    />
+                  </div>
+                  <Select value={filterRating} onValueChange={setFilterRating}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="oldest">Oldest</SelectItem>
-                      <SelectItem value="rating">Rating</SelectItem>
-                      <SelectItem value="upvotes">Upvotes</SelectItem>
+                      <SelectItem value="all">All Ratings</SelectItem>
+                      <SelectItem value="5">5 Stars</SelectItem>
+                      <SelectItem value="4">4 Stars</SelectItem>
+                      <SelectItem value="3">3 Stars</SelectItem>
+                      <SelectItem value="2">2 Stars</SelectItem>
+                      <SelectItem value="1">1 Star</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterTag} onValueChange={setFilterTag}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tags</SelectItem>
+                      {AVAILABLE_TAGS.map((tag) => (
+                        <SelectItem key={tag} value={tag}>
+                          {tag}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </Card>
 
-              {/* Feedback Cards */}
-              <div className="space-y-4">
-                <AnimatePresence>
-                  {filteredFeedbacks.map((feedback) => (
-                    <motion.div
-                      key={feedback.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="group"
-                    >
-                      <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                {feedback.isAnonymous ? (
-                                  <UserX className="h-5 w-5" />
-                                ) : (
-                                  feedback.userName.charAt(0).toUpperCase()
-                                )}
-                              </div>
-                              <div>
-                                <p className="font-medium">{feedback.isAnonymous ? "Anonymous" : feedback.userName}</p>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Calendar className="h-3 w-3" />
-                                  {feedback.timestamp.toLocaleDateString()}
-                                  {feedback.language === "ur" && <span className="text-xs">🇵🇰</span>}
-                                </div>
-                              </div>
+                {/* Feedback List */}
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  <AnimatePresence>
+                    {filteredFeedbacks.map((feedback) => (
+                      <motion.div
+                        key={feedback.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-gradient-to-r from-white to-blue-50 dark:from-slate-800 dark:to-blue-900/20 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-4 w-4 ${
+                                    star <= feedback.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
                             </div>
+                            <span className="text-sm font-medium">
+                              {feedback.isAnonymous ? "Anonymous" : feedback.userName}
+                            </span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {feedback.timestamp.toLocaleDateString()}
+                            </span>
+                            {feedback.language === "ur" && (
+                              <Badge variant="outline" className="text-xs">
+                                🇵🇰 اردو
+                              </Badge>
+                            )}
+                          </div>
+                          <Badge
+                            variant={feedback.status === "approved" ? "default" : "secondary"}
+                            className={
+                              feedback.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }
+                          >
+                            {feedback.status}
+                          </Badge>
+                        </div>
 
+                        <p className={`text-sm mb-3 ${feedback.language === "ur" ? "text-right" : "text-left"}`}>
+                          {feedback.text}
+                        </p>
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {feedback.tags.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                              <Tag className="h-3 w-3 mr-1" />
+                              {tag}
+                            </Badge>
+                          ))}
+                          {feedback.autoTags?.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs bg-purple-100 text-purple-800">
+                              <Bot className="h-3 w-3 mr-1" />
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* AI Summary */}
+                        {feedback.aiSummary && (
+                          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-3 rounded-lg mb-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Sparkles className="h-4 w-4 text-purple-500" />
+                              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                                AI Summary
+                              </span>
+                            </div>
+                            <p className="text-xs text-purple-600 dark:text-purple-400">{feedback.aiSummary}</p>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => handleUpvote(feedback.id)}
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            <ThumbsUp className="h-4 w-4" />
+                            <span>Helpful ({feedback.upvotes})</span>
+                          </button>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Globe className="h-3 w-3" />
+                            <span>{feedback.language === "en" ? "English" : "اردو"}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {filteredFeedbacks.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No feedback found matching your filters.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Admin Panel */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-8"
+        >
+          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-800/80 border-red-200 dark:border-red-800 shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Admin Panel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {!isAdminAuthenticated ? (
+                <div className="max-w-md mx-auto">
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      placeholder="Enter admin password..."
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && handleAdminLogin()}
+                    />
+                    <Button onClick={handleAdminLogin} variant="outline">
+                      Login
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">Demo password: admin123</p>
+                </div>
+              ) : (
+                <Tabs defaultValue="dashboard" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                    <TabsTrigger value="manage">Manage</TabsTrigger>
+                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsTrigger value="export">Export</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="dashboard" className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <Card className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+                        <div className="flex items-center gap-3">
+                          <MessageSquare className="h-8 w-8 text-blue-500" />
+                          <div>
+                            <p className="text-2xl font-bold">{stats.total}</p>
+                            <p className="text-sm text-muted-foreground">Total Feedback</p>
+                          </div>
+                        </div>
+                      </Card>
+                      <Card className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+                        <div className="flex items-center gap-3">
+                          <Check className="h-8 w-8 text-green-500" />
+                          <div>
+                            <p className="text-2xl font-bold">{stats.approved}</p>
+                            <p className="text-sm text-muted-foreground">Approved</p>
+                          </div>
+                        </div>
+                      </Card>
+                      <Card className="p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20">
+                        <div className="flex items-center gap-3">
+                          <Clock className="h-8 w-8 text-yellow-500" />
+                          <div>
+                            <p className="text-2xl font-bold">{stats.pending}</p>
+                            <p className="text-sm text-muted-foreground">Pending</p>
+                          </div>
+                        </div>
+                      </Card>
+                      <Card className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+                        <div className="flex items-center gap-3">
+                          <Star className="h-8 w-8 text-purple-500 fill-current" />
+                          <div>
+                            <p className="text-2xl font-bold">{stats.averageRating.toFixed(1)}</p>
+                            <p className="text-sm text-muted-foreground">Avg Rating</p>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="manage" className="space-y-4">
+                    <div className="flex gap-4 mb-4">
+                      <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {feedbacks.map((feedback) => (
+                        <div key={feedback.id} className="p-4 border rounded-lg bg-white dark:bg-slate-800">
+                          <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              {/* Rating */}
                               <div className="flex">
-                                {[...Array(5)].map((_, i) => (
+                                {[1, 2, 3, 4, 5].map((star) => (
                                   <Star
-                                    key={i}
+                                    key={star}
                                     className={`h-4 w-4 ${
-                                      i < feedback.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                      star <= feedback.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                                     }`}
                                   />
                                 ))}
                               </div>
-
-                              {/* Admin Actions */}
-                              {isAdmin && (
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleApproveFeedback(feedback.id)}
-                                    className={feedback.isApproved ? "text-green-600" : "text-gray-400"}
-                                  >
-                                    {feedback.isApproved ? (
-                                      <CheckCircle className="h-4 w-4" />
-                                    ) : (
-                                      <Clock className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteFeedback(feedback.id)}
-                                    className="text-red-600"
-                                  >
-                                    <XCircle className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Feedback Text */}
-                          <p className={`mb-4 leading-relaxed ${feedback.language === "ur" ? "text-right" : ""}`}>
-                            {feedback.text}
-                          </p>
-
-                          {/* AI Summary */}
-                          {feedback.aiSummary && isAdmin && (
-                            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Sparkles className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-600">AI Summary</span>
-                              </div>
-                              <p className="text-sm text-blue-700 dark:text-blue-300">{feedback.aiSummary}</p>
-                            </div>
-                          )}
-
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {feedback.tags.map((tagId) => {
-                              const tag = availableTags.find((t) => t.id === tagId)
-                              return (
-                                <Badge key={tagId} className={tag?.color}>
-                                  <Tag className="h-3 w-3 mr-1" />
-                                  {tag?.label}
-                                </Badge>
-                              )
-                            })}
-                            {feedback.autoTags?.map((autoTag) => (
-                              <Badge key={autoTag} variant="outline" className="text-xs">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                {autoTag}
+                              <span className="font-medium">
+                                {feedback.isAnonymous ? "Anonymous" : feedback.userName}
+                              </span>
+                              <Badge
+                                variant={
+                                  feedback.status === "approved"
+                                    ? "default"
+                                    : feedback.status === "pending"
+                                      ? "secondary"
+                                      : "destructive"
+                                }
+                              >
+                                {feedback.status}
                               </Badge>
-                            ))}
-                          </div>
-
-                          {/* Images */}
-                          {feedback.images.length > 0 && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-                              {feedback.images.map((image, index) => (
-                                <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                                  <Image
-                                    src={image || "/placeholder.svg"}
-                                    alt={`Feedback image ${index + 1}`}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                              ))}
                             </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="flex items-center justify-between pt-4 border-t">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleUpvote(feedback.id)}
-                              className={`flex items-center gap-2 ${
-                                feedback.hasUpvoted ? "text-blue-600" : "text-muted-foreground"
-                              }`}
-                            >
-                              <ThumbsUp className={`h-4 w-4 ${feedback.hasUpvoted ? "fill-current" : ""}`} />
-                              {t.helpful} ({feedback.upvotes})
-                            </Button>
-
-                            {!feedback.isApproved && (
-                              <Badge variant="outline" className="text-orange-600 border-orange-200">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Pending Approval
-                              </Badge>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-
-                {filteredFeedbacks.length === 0 && (
-                  <Card className="p-12 text-center">
-                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No feedback found matching your criteria.</p>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-
-            {/* Submit Feedback */}
-            <TabsContent value="submit">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5" />
-                    {t.submitFeedback}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmitFeedback} className="space-y-6">
-                    {/* Rating */}
-                    <div className="space-y-2">
-                      <Label>{t.rating}</Label>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <button
-                            key={rating}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, rating })}
-                            className="focus:outline-none"
-                          >
-                            <Star
-                              className={`h-8 w-8 transition-colors ${
-                                rating <= formData.rating
-                                  ? "text-yellow-400 fill-yellow-400"
-                                  : "text-gray-300 hover:text-yellow-200"
-                              }`}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Feedback Text */}
-                    <div className="space-y-2">
-                      <Label htmlFor="feedback">{t.feedback}</Label>
-                      <Textarea
-                        id="feedback"
-                        value={formData.text}
-                        onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                        placeholder={
-                          currentLanguage === "en"
-                            ? "Share your thoughts, suggestions, or report issues..."
-                            : "اپنے خیالات، تجاویز، یا مسائل کی رپورٹ کریں..."
-                        }
-                        rows={4}
-                        required
-                        className={formData.language === "ur" ? "text-right" : ""}
-                      />
-                    </div>
-
-                    {/* Tags */}
-                    <div className="space-y-2">
-                      <Label>{t.tags}</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {availableTags.map((tag) => (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            onClick={() => {
-                              const newTags = formData.tags.includes(tag.id)
-                                ? formData.tags.filter((t) => t !== tag.id)
-                                : [...formData.tags, tag.id]
-                              setFormData({ ...formData, tags: newTags })
-                            }}
-                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                              formData.tags.includes(tag.id)
-                                ? "bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-100"
-                                : "border-gray-300 hover:border-blue-300 dark:border-gray-600 dark:hover:border-blue-600"
-                            }`}
-                          >
-                            {tag.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Image Upload */}
-                    <div className="space-y-2">
-                      <Label>{t.uploadImages}</Label>
-                      <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/png,image/jpg,image/jpeg,image/webp"
-                          onChange={(e) => {
-                            const files = Array.from(e.target.files || [])
-                            setFormData({ ...formData, images: files })
-                          }}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <label htmlFor="image-upload" className="cursor-pointer">
-                          <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">Click to upload images (PNG, JPG, WebP)</p>
-                        </label>
-                        {formData.images.length > 0 && (
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {formData.images.map((file, index) => (
-                              <div key={index} className="relative">
-                                <img
-                                  src={URL.createObjectURL(file) || "/placeholder.svg"}
-                                  alt={`Upload ${index + 1}`}
-                                  className="w-16 h-16 object-cover rounded"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newImages = formData.images.filter((_, i) => i !== index)
-                                    setFormData({ ...formData, images: newImages })
-                                  }}
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            <div className="flex gap-2">
+                              {feedback.status !== "approved" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleStatusChange(feedback.id, "approved")}
+                                  className="bg-green-500 hover:bg-green-600"
                                 >
-                                  ×
-                                </button>
-                              </div>
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {feedback.status !== "rejected" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStatusChange(feedback.id, "rejected")}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(feedback.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm mb-2">{feedback.text}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {feedback.tags.map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
                             ))}
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* User Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="userName">{t.userName}</Label>
-                        <Input
-                          id="userName"
-                          value={formData.userName}
-                          onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
-                          placeholder={currentLanguage === "en" ? "Your name (optional)" : "آپ کا نام (اختیاری)"}
-                          disabled={formData.isAnonymous}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>{t.language}</Label>
-                        <Select
-                          value={formData.language}
-                          onValueChange={(value: "en" | "ur") => setFormData({ ...formData, language: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {languages.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code}>
-                                {lang.flag} {lang.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Anonymous Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="anonymous"
-                        checked={formData.isAnonymous}
-                        onCheckedChange={(checked) => setFormData({ ...formData, isAnonymous: checked })}
-                      />
-                      <Label htmlFor="anonymous">{t.anonymous}</Label>
-                    </div>
-
-                    {/* reCAPTCHA Placeholder */}
-                    <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-green-600" />
-                        <span className="text-sm">reCAPTCHA verification (simulated)</span>
-                      </div>
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button type="submit" disabled={isLoading || !formData.text.trim()} className="w-full">
-                      {isLoading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-2" />
-                          {t.submit}
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Admin Panel */}
-            {isAdmin && (
-              <TabsContent value="admin" className="space-y-6">
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <Card className="p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
-                    <div className="text-sm text-muted-foreground">Total</div>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-                    <div className="text-sm text-muted-foreground">Approved</div>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
-                    <div className="text-sm text-muted-foreground">Pending</div>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <div className="text-2xl font-bold text-purple-600">{stats.averageRating.toFixed(1)}</div>
-                    <div className="text-sm text-muted-foreground">Avg Rating</div>
-                  </Card>
-                  <Card className="p-4 text-center">
-                    <div className="text-2xl font-bold text-pink-600">{stats.totalUpvotes}</div>
-                    <div className="text-sm text-muted-foreground">Total Upvotes</div>
-                  </Card>
-                </div>
-
-                {/* Admin Actions */}
-                <Card className="p-4">
-                  <div className="flex flex-wrap gap-4">
-                    <Button onClick={() => exportFeedbacks("csv")} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export CSV
-                    </Button>
-                    <Button onClick={() => exportFeedbacks("json")} variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Export JSON
-                    </Button>
-                    <Button variant="outline">
-                      <Bell className="h-4 w-4 mr-2" />
-                      Notifications
-                    </Button>
-                    <Button variant="outline">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </Button>
-                  </div>
-                </Card>
-
-                {/* Rating Distribution */}
-                <Card className="p-6">
-                  <CardTitle className="mb-4">Rating Distribution</CardTitle>
-                  <div className="space-y-3">
-                    {[5, 4, 3, 2, 1].map((rating) => {
-                      const count = feedbacks.filter((f) => f.rating === rating).length
-                      const percentage = feedbacks.length > 0 ? (count / feedbacks.length) * 100 : 0
-                      return (
-                        <div key={rating} className="flex items-center gap-4">
-                          <div className="flex items-center gap-1 w-16">
-                            <span className="text-sm">{rating}</span>
-                            <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                          </div>
-                          <Progress value={percentage} className="flex-1" />
-                          <span className="text-sm text-muted-foreground w-12">{count}</span>
                         </div>
-                      )
-                    })}
-                  </div>
-                </Card>
-              </TabsContent>
-            )}
-          </Tabs>
-        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="analytics" className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Rating Distribution</h3>
+                      <div className="space-y-3">
+                        {ratingDistribution.map(({ rating, count }) => (
+                          <div key={rating} className="flex items-center gap-4">
+                            <div className="flex items-center gap-1 w-20">
+                              <span>{rating}</span>
+                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                            <div className="flex-1">
+                              <Progress value={(count / stats.approved) * 100} className="h-2" />
+                            </div>
+                            <span className="text-sm text-muted-foreground w-12">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="export" className="space-y-6">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-lg font-semibold">Export Feedback Data</h3>
+                      <p className="text-muted-foreground">Download approved feedback in your preferred format</p>
+                      <div className="flex gap-4 justify-center">
+                        <Button onClick={() => exportData("json")} variant="outline">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export JSON
+                        </Button>
+                        <Button onClick={() => exportData("csv")} variant="outline">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export CSV
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </section>
   )

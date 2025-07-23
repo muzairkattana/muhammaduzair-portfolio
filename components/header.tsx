@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, X, Download, Phone, Mail } from "lucide-react"
+import { Menu, X, Download, Phone, Mail, Calendar, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -11,12 +11,18 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   useEffect(() => {
     setIsMounted(true)
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50)
+
+      // Calculate scroll progress
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight
+      const progress = (window.scrollY / totalHeight) * 100
+      setScrollProgress(Math.min(progress, 100))
     }
 
     window.addEventListener("scroll", handleScroll)
@@ -74,11 +80,16 @@ export default function Header() {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
+      {/* Add progress bar */}
+      <div
+        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-primary to-secondary transition-all duration-300"
+        style={{ width: `${scrollProgress}%` }}
+      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo Section */}
           <motion.div
-            className="flex items-center gap-2 sm:gap-3 group cursor-pointer"
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer relative"
             onClick={() => handleNavClick("#home")}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -91,12 +102,14 @@ export default function Header() {
                 className="object-cover group-hover:scale-110 transition-transform duration-300"
                 priority
               />
+              {/* Add availability indicator */}
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse"></div>
             </div>
             <div className="flex flex-col">
               <span className="text-base sm:text-lg lg:text-xl font-bold text-foreground group-hover:text-primary transition-colors duration-300">
                 Muhammad Uzair
               </span>
-              <span className="text-xs text-muted-foreground hidden sm:block">Full Stack Developer</span>
+              <span className="text-xs text-muted-foreground hidden sm:block">Full Stack Developer • Available</span>
             </div>
           </motion.div>
 
@@ -117,6 +130,27 @@ export default function Header() {
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 group-hover:w-full"></span>
               </motion.button>
             ))}
+            {/* Add after the navigation items */}
+            <div className="hidden xl:flex items-center gap-2 ml-4 pl-4 border-l border-border/30">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.open("https://calendly.com/muhammaduzair", "_blank")}
+                className="text-xs hover:bg-primary/10 hover:text-primary transition-all duration-300"
+              >
+                <Calendar className="h-3 w-3 mr-1" />
+                Book Call
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleNavClick("#portfolio")}
+                className="text-xs hover:bg-primary/10 hover:text-primary transition-all duration-300"
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Portfolio
+              </Button>
+            </div>
           </nav>
 
           {/* Action Buttons */}
